@@ -1,6 +1,10 @@
 module Data.Graph.Haggle.Digraph (
   Vertex,
   Edge,
+  vertexId,
+  edgeId,
+  edgeSource,
+  edgeDest,
   MGraph,
   new,
   newSized,
@@ -47,6 +51,22 @@ newtype Vertex = V Int
 -- The edge ID and the src and dst vertex IDs
 data Edge = E {-# UNPACK #-} !Int {-# UNPACK #-} !Int {-# UNPACK #-} !Int
   deriving (Eq, Ord, Show)
+
+vertexId :: Vertex -> Int
+vertexId (V vid) = vid
+{-# INLINE vertexId #-}
+
+edgeId :: Edge -> Int
+edgeId (E eid _ _) = eid
+{-# INLINE edgeId #-}
+
+edgeSource :: Edge -> Vertex
+edgeSource (E _ s _) = V s
+{-# INLINE edgeSource #-}
+
+edgeDest :: Edge -> Vertex
+edgeDest (E _ _ d) = V d
+{-# INLINE edgeDest #-}
 
 defaultSize :: Int
 defaultSize = 128
