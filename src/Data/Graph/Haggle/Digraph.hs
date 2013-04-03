@@ -46,7 +46,7 @@ newtype Vertex = V Int
 
 -- The edge ID and the src and dst vertex IDs
 data Edge = E {-# UNPACK #-} !Int {-# UNPACK #-} !Int {-# UNPACK #-} !Int
-  deriving (Show)
+  deriving (Eq, Ord, Show)
 
 defaultSize :: Int
 defaultSize = 128
