@@ -1,3 +1,10 @@
+-- | This internal module implements code shared between all of the
+-- adapter interfaces.  The adapters add support for vertex and edge
+-- labels without modifications to the underlying graph.  Any graph
+-- implementing the 'MGraph' interface can have labels added with
+-- these adapters.
+--
+-- Analogous adapters will be added for the pure graph interface, too.
 module Data.Graph.Haggle.Internal.Adapter (
   LabeledMGraph(..),
   LabeledGraph(..),
@@ -27,12 +34,16 @@ import qualified Data.Vector as V
 import qualified Data.Vector.Mutable as MV
 import qualified Data.Graph.Haggle.Interface as I
 
+-- | An adapter adding support for both vertex and edge labels for mutable
+-- graphs.
 data LabeledMGraph g m nl el =
   LMG { rawMGraph :: g m
       , nodeLabelStorage :: PrimRef m (MVector (PrimState m) nl)
       , edgeLabelStorage :: PrimRef m (MVector (PrimState m) el)
       }
 
+-- | An adapter adding support for both vertex and edge labels for immutable
+-- graphs.
 data LabeledGraph g nl el =
   LG { rawGraph :: g
      , nodeLabelStore :: Vector nl
