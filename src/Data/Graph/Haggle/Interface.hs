@@ -1,4 +1,4 @@
-{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE KindSignatures, TypeFamilies #-}
 module Data.Graph.Haggle.Interface (
   Vertex(..),
   Edge(..),
@@ -34,9 +34,8 @@ edgeDest :: Edge -> Vertex
 edgeDest (E _ _ d) = V d
 {-# INLINE edgeDest #-}
 
--- FIXME: Use associated types here to define the Graph for each MGraph
-
 class MGraph (g :: (* -> *) -> *) where
+  type ImmutableGraph g
   new :: (PrimMonad m) => m (g m)
   newSized :: (PrimMonad m) => Int -> Int -> m (g m)
   addVertex :: (PrimMonad m) => g m -> m Vertex
@@ -45,13 +44,15 @@ class MGraph (g :: (* -> *) -> *) where
   getOutEdges :: (PrimMonad m) => g m -> Vertex -> m [Edge]
   countVertices :: (PrimMonad m) => g m -> m Int
   countEdges :: (PrimMonad m) => g m -> m Int
-  -- freeze :: (PrimMonad m, Graph g') => g m -> m g'
+  freeze :: (PrimMonad m) => g m -> m (ImmutableGraph g)
 
 class (MGraph g) => MBidirectional g where
   getPredecessors :: (PrimMonad m) => g m -> Vertex -> m [Vertex]
   getInEdges :: (PrimMonad m) => g m -> Vertex -> m [Edge]
 
 class Graph g where
+  type MutableGraph g
   vertices :: g -> [Vertex]
   edges :: g -> [Edge]
---  thaw :: (PrimMonad m, MGraph g') => g -> m (g' m)
+  thaw :: (PrimMonad m) => g -> m (MutableGraph g)
+

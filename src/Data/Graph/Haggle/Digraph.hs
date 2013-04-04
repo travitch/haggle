@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies #-}
 module Data.Graph.Haggle.Digraph (
   MDigraph,
   Digraph,
@@ -40,6 +41,7 @@ defaultSize :: Int
 defaultSize = 128
 
 instance MGraph MDigraph where
+  type ImmutableGraph MDigraph = Digraph
   new = newSized defaultSize defaultSize
   newSized szNodes szEdges = do
     when (szNodes < 0 || szEdges < 0) $ error "Negative size (newSized)"
@@ -115,24 +117,26 @@ instance MGraph MDigraph where
     return $ map (\(E _ _ dst) -> V dst) es
 
 -- | Freeze a mutable 'MGraph' into a pure 'Graph'
-freeze :: (PrimMonad m) => MDigraph m -> m Digraph
-freeze g = do
-  nVerts <- readPrimRef (graphVertexCount g)
-  nEdges <- readPrimRef (graphEdgeCount g)
-  roots <- readPrimRef (graphEdgeRoots g)
-  targets <- readPrimRef (graphEdgeTarget g)
-  nexts <- readPrimRef (graphEdgeNext g)
-  roots' <- UV.freeze (MUV.take nVerts roots)
-  targets' <- UV.freeze (MUV.take nEdges targets)
-  nexts' <- UV.freeze (MUV.take nEdges nexts)
-  return $! Digraph { edgeRoots = roots'
-                  , edgeTargets = targets'
-                  , edgeNexts = nexts'
-                  }
+-- freeze :: (PrimMonad m) => MDigraph m -> m Digraph
+  freeze g = do
+    nVerts <- readPrimRef (graphVertexCount g)
+    nEdges <- readPrimRef (graphEdgeCount g)
+    roots <- readPrimRef (graphEdgeRoots g)
+    targets <- readPrimRef (graphEdgeTarget g)
+    nexts <- readPrimRef (graphEdgeNext g)
+    roots' <- UV.freeze (MUV.take nVerts roots)
+    targets' <- UV.freeze (MUV.take nEdges targets)
+    nexts' <- UV.freeze (MUV.take nEdges nexts)
+    return $! Digraph { edgeRoots = roots'
+                    , edgeTargets = targets'
+                    , edgeNexts = nexts'
+                    }
 
-instance Graph Digraph where
+instance (PrimMonad m) => Graph Digraph where
+  type MutableGraph Digraph = MDigraph m
   vertices = undefined
   edges = undefined
+  thaw = undefined
 
 -- Helpers
 
