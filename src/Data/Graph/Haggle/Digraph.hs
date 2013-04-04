@@ -2,7 +2,6 @@
 module Data.Graph.Haggle.Digraph (
   MDigraph,
   Digraph,
-  freeze,
   ) where
 
 import Control.Monad ( when )
