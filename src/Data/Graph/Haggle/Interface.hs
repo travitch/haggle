@@ -74,6 +74,14 @@ class MGraph (g :: (* -> *) -> *) where
   -- | Return the number of edges in the graph
   countEdges :: (PrimMonad m) => g m -> m Int
 
+  -- | Edge existence test; this has a default implementation,
+  -- but can be overridden if an implementation can support a
+  -- better-than-linear version.
+  edgeExists :: (PrimMonad m) => g m -> Vertex -> Vertex -> m Bool
+  edgeExists g src dst = do
+    succs <- getSuccessors g src
+    return $ any (==dst) succs
+
   -- | Freeze the mutable graph into an immutable graph.
   freeze :: (PrimMonad m) => g m -> m (ImmutableGraph g)
 
