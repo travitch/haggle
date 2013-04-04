@@ -10,6 +10,9 @@
 --  * Removing nodes and edges is not currently possible.
 --
 --  * Predecessors are not accessible
+--
+--  * Edge existence tests are *linear* in the number of edges for
+--    the source node.
 module Data.Graph.Haggle.Digraph (
   MDigraph,
   Digraph

@@ -15,6 +15,7 @@ library
   hs-source-dirs: src
   ghc-options: -Wall
   exposed-modules: Data.Graph.Haggle.Digraph,
+                   Data.Graph.Haggle.SimpleBiDigraph,
                    Data.Graph.Haggle.Interface,
                    Data.Graph.Haggle.LabelAdapter,
                    Data.Graph.Haggle.VertexLabelAdapter,
@@ -23,4 +24,5 @@ library
   build-depends: base == 4.*,
                  vector >= 0.9,
                  primitive >= 0.4,
+                 containers >= 0.4,
                  monad-primitive
