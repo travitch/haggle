@@ -14,8 +14,12 @@ cabal-version: >=1.8
 library
   hs-source-dirs: src
   ghc-options: -Wall
-  exposed-modules: Data.Graph.Haggle.Digraph
-  -- other-modules:
+  exposed-modules: Data.Graph.Haggle.Digraph,
+                   Data.Graph.Haggle.Interface,
+                   Data.Graph.Haggle.LabelAdapter,
+                   Data.Graph.Haggle.VertexLabelAdapter,
+                   Data.Graph.Haggle.EdgeLabelAdapter
+  other-modules: Data.Graph.Haggle.Internal.Adapter
   build-depends: base == 4.*,
                  vector >= 0.9,
                  primitive >= 0.4,
