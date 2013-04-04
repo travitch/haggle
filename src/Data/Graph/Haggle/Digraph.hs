@@ -1,7 +1,18 @@
 {-# LANGUAGE TypeFamilies #-}
+-- | This graph implementation is a directed (multi-)graph that only tracks
+-- successors.  This encoding is very compact.  It is a multi-graph because it
+-- allows parallel edges between vertices.  If you require only simple graphs,
+-- careful edge insertion is required (or another graph type might be more
+-- appropriate).
+--
+-- Limitations:
+--
+--  * Removing nodes and edges is not currently possible.
+--
+--  * Predecessors are not accessible
 module Data.Graph.Haggle.Digraph (
   MDigraph,
-  Digraph,
+  Digraph
   ) where
 
 import Control.Monad ( when )
@@ -13,28 +24,20 @@ import qualified Data.Vector.Unboxed as UV
 
 import Data.Graph.Haggle.Interface
 
--- The edge roots vector is indexed by vertex id.  A -1 in the
--- vector indicates that there are no edges leaving the vertex.
--- Any other value is an index into BOTH the graphEdgeTarget and
--- graphEdgeNext vectors.
---
--- The graphEdgeTarget vector contains the vertex id of an edge
--- target.
---
--- The graphEdgeNext vector contains, at the same index, the index
--- of the next edge in the edge list (again into Target and Next).
--- A -1 indicates no more edges.
-data MDigraph m = MDigraph { graphVertexCount :: PrimRef m Int
-                       , graphEdgeRoots :: PrimRef m (MUV.MVector (PrimState m) Int)
-                       , graphEdgeCount :: PrimRef m Int
-                       , graphEdgeTarget :: PrimRef m (MUV.MVector (PrimState m) Int)
-                       , graphEdgeNext :: PrimRef m (MUV.MVector (PrimState m) Int)
-                       }
+-- | This is a compact (mutable) directed graph.
+data MDigraph m = -- See Note [Graph Representation]
+  MDigraph { graphVertexCount :: PrimRef m Int
+           , graphEdgeRoots :: PrimRef m (MUV.MVector (PrimState m) Int)
+           , graphEdgeCount :: PrimRef m Int
+           , graphEdgeTarget :: PrimRef m (MUV.MVector (PrimState m) Int)
+           , graphEdgeNext :: PrimRef m (MUV.MVector (PrimState m) Int)
+           }
 
-data Digraph = Digraph { edgeRoots :: UV.Vector Int
-                   , edgeTargets :: UV.Vector Int
-                   , edgeNexts :: UV.Vector Int
-                   }
+data Digraph =
+  Digraph { edgeRoots :: UV.Vector Int
+          , edgeTargets :: UV.Vector Int
+          , edgeNexts :: UV.Vector Int
+          }
 
 defaultSize :: Int
 defaultSize = 128
@@ -69,11 +72,6 @@ instance MGraph MDigraph where
     where
       r = graphVertexCount g
 
--- | Add an edge between two vertices.  Returns a unique identifier
--- for the edge.  If either the source or destination are not in the
--- graph, the function returns Nothing and does not modify the graph.
---
--- FIXME: It might be worth keeping edges in sorted order.
   addEdge g (V src) (V dst) = do
     nVerts <- readPrimRef (graphVertexCount g)
     case src >= nVerts || dst >= nVerts of
@@ -108,15 +106,10 @@ instance MGraph MDigraph where
   countVertices = readPrimRef . graphVertexCount
   countEdges = readPrimRef . graphEdgeCount
 
--- | Lookup all of the successors of the given vertex.  There will be
--- duplicates in the result list if there are parallel edges.  The edge
--- targets are returned in an arbitrary order.
   getSuccessors g src = do
     es <- getOutEdges g src
     return $ map (\(E _ _ dst) -> V dst) es
 
--- | Freeze a mutable 'MGraph' into a pure 'Graph'
--- freeze :: (PrimMonad m) => MDigraph m -> m Digraph
   freeze g = do
     nVerts <- readPrimRef (graphVertexCount g)
     nEdges <- readPrimRef (graphEdgeCount g)
@@ -181,3 +174,19 @@ ensureEdgeSpace g = do
       v2' <- MUV.grow v2 cap
       writePrimRef (graphEdgeTarget g) v1'
       writePrimRef (graphEdgeNext g) v2'
+
+{- Note [Graph Representation]
+
+The edge roots vector is indexed by vertex id.  A -1 in the
+vector indicates that there are no edges leaving the vertex.
+Any other value is an index into BOTH the graphEdgeTarget and
+graphEdgeNext vectors.
+
+The graphEdgeTarget vector contains the vertex id of an edge
+target.
+
+The graphEdgeNext vector contains, at the same index, the index
+of the next edge in the edge list (again into Target and Next).
+A -1 indicates no more edges.
+
+-}
