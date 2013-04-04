@@ -1,5 +1,6 @@
 module Data.Graph.Haggle.LabelAdapter (
   LabeledMGraph,
+  LabeledGraph,
   newLabeledGraph,
   newSizedLabeledGraph,
   addLabeledVertex,
@@ -12,6 +13,7 @@ module Data.Graph.Haggle.LabelAdapter (
   countEdges,
   getPredecessors,
   getInEdges,
+  freeze
   ) where
 
 import Data.Graph.Haggle.Internal.Adapter

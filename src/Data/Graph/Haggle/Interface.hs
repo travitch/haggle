@@ -51,8 +51,8 @@ class (MGraph g) => MBidirectional g where
   getInEdges :: (PrimMonad m) => g m -> Vertex -> m [Edge]
 
 class Graph g where
-  type MutableGraph g
+  type MutableGraph g m
   vertices :: g -> [Vertex]
   edges :: g -> [Edge]
-  thaw :: (PrimMonad m) => g -> m (MutableGraph g)
+  thaw :: (PrimMonad m) => g -> m (MutableGraph g m)
 

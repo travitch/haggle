@@ -75,7 +75,6 @@ instance MGraph MDigraph where
 -- graph, the function returns Nothing and does not modify the graph.
 --
 -- FIXME: It might be worth keeping edges in sorted order.
--- addEdge :: (PrimMonad m) => MGraph m -> Vertex -> Vertex -> m (Maybe Edge)
   addEdge g (V src) (V dst) = do
     nVerts <- readPrimRef (graphVertexCount g)
     case src >= nVerts || dst >= nVerts of
@@ -98,7 +97,6 @@ instance MGraph MDigraph where
         MUV.write rootVec src eid
         return $ Just (E eid src dst)
 
--- outEdges :: (PrimMonad m) => MGraph m -> Vertex -> m [Edge]
   getOutEdges g (V src) = do
     nVerts <- readPrimRef (graphVertexCount g)
     case src >= nVerts of
@@ -108,10 +106,12 @@ instance MGraph MDigraph where
         lstRoot <- MUV.read roots src
         findEdges g src lstRoot
 
+  countVertices = readPrimRef . graphVertexCount
+  countEdges = readPrimRef . graphEdgeCount
+
 -- | Lookup all of the successors of the given vertex.  There will be
 -- duplicates in the result list if there are parallel edges.  The edge
 -- targets are returned in an arbitrary order.
--- successors :: (PrimMonad m) => MGraph m -> Vertex -> m [Vertex]
   getSuccessors g src = do
     es <- getOutEdges g src
     return $ map (\(E _ _ dst) -> V dst) es
@@ -132,8 +132,8 @@ instance MGraph MDigraph where
                     , edgeNexts = nexts'
                     }
 
-instance (PrimMonad m) => Graph Digraph where
-  type MutableGraph Digraph = MDigraph m
+instance Graph Digraph where
+  type MutableGraph Digraph m = MDigraph m
   vertices = undefined
   edges = undefined
   thaw = undefined
