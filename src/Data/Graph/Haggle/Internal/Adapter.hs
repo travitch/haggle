@@ -227,6 +227,18 @@ instance (I.Graph g) => I.Graph (LabeledGraph g nl el) where
   edgeExists = edgeExists
   thaw = thaw
 
+predecessors :: (I.Bidirectional g) => LabeledGraph g nl el -> I.Vertex -> [I.Vertex]
+predecessors lg = I.predecessors (rawGraph lg)
+{-# INLINE predecessors #-}
+
+inEdges :: (I.Bidirectional g) => LabeledGraph g nl el -> I.Vertex -> [I.Edge]
+inEdges lg = I.inEdges (rawGraph lg)
+{-# INLINE inEdges #-}
+
+instance (I.Bidirectional g) => I.Bidirectional (LabeledGraph g nl el) where
+  predecessors = predecessors
+  inEdges = inEdges
+
 edgeLabel :: LabeledGraph g nl el -> I.Edge -> Maybe el
 edgeLabel lg e = edgeLabelStore lg V.!? I.edgeId e
 {-# INLINE edgeLabel #-}

@@ -25,21 +25,45 @@ import qualified Data.Graph.Haggle.Interface as I
 newtype VertexLabeledMGraph g nl m = VLMG { unVLMG :: A.LabeledMGraph g nl () m }
 newtype VertexLabeledGraph g nl = VLG { unVLG :: A.LabeledGraph g nl () }
 
+vertices :: (I.Graph g) => VertexLabeledGraph g nl -> [I.Vertex]
+vertices = I.vertices . unVLG
+{-# INLINE vertices #-}
+
+edges :: (I.Graph g) => VertexLabeledGraph g nl -> [I.Edge]
+edges = I.edges . unVLG
+{-# INLINE edges #-}
+
+successors :: (I.Graph g) => VertexLabeledGraph g nl -> I.Vertex -> [I.Vertex]
+successors (VLG lg) = I.successors lg
+{-# INLINE successors #-}
+
+outEdges :: (I.Graph g) => VertexLabeledGraph g nl -> I.Vertex -> [I.Edge]
+outEdges (VLG lg) = I.outEdges lg
+{-# INLINE outEdges #-}
+
+edgeExists :: (I.Graph g) => VertexLabeledGraph g nl -> I.Vertex -> I.Vertex -> Bool
+edgeExists (VLG lg) = I.edgeExists lg
+{-# INLINE edgeExists #-}
+
 instance (I.Graph g) => I.Graph (VertexLabeledGraph g nl) where
   type MutableGraph (VertexLabeledGraph g nl) =
     VertexLabeledMGraph (I.MutableGraph g) nl
-  vertices = I.vertices . unVLG
-  edges = I.edges . unVLG
-  successors (VLG lg) = I.successors lg
-  outEdges (VLG lg) = I.outEdges lg
-  edgeExists (VLG lg) = I.edgeExists lg
+  vertices = vertices
+  edges = edges
+  successors = successors
+  outEdges = outEdges
+  edgeExists = edgeExists
   thaw (VLG lg) = do
     g' <- I.thaw lg
     return $ VLMG g'
 
+vertexLabel :: VertexLabeledGraph g nl -> I.Vertex -> Maybe nl
+vertexLabel (VLG g) = I.vertexLabel g
+{-# INLINE vertexLabel #-}
+
 instance I.HasVertexLabel (VertexLabeledGraph g nl) where
   type VertexLabel (VertexLabeledGraph g nl) = nl
-  vertexLabel (VLG g) = I.vertexLabel g
+  vertexLabel = vertexLabel
 
 newVertexLabeledGraph :: (PrimMonad m, I.MGraph g)
                       => m (g m)
