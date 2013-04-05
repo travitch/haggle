@@ -133,11 +133,50 @@ instance MGraph MDigraph where
 
 instance Graph Digraph where
   type MutableGraph Digraph m = MDigraph m
-  vertices = undefined
-  edges = undefined
-  thaw = undefined
+  vertices g = map V $ [0 .. UV.length (edgeRoots g) - 1]
+  edges g = concatMap (outEdges g) (vertices g)
+  successors g (V v)
+    | v >= UV.length (edgeRoots g) = []
+    | otherwise =
+      let root = UV.unsafeIndex (edgeRoots g) v
+      in pureSuccessors g root
+  outEdges g (V v)
+    | v >= UV.length (edgeRoots g) = []
+    | otherwise =
+      let root = UV.unsafeIndex (edgeRoots g) v
+      in pureEdges g v root
+  edgeExists g v1 v2 = any (==v2) $ successors g v1
+  thaw g = do
+    vc <- newPrimRef (UV.length (edgeRoots g))
+    ec <- newPrimRef (UV.length (edgeTargets g))
+    rvec <- UV.thaw (edgeRoots g)
+    tvec <- UV.thaw (edgeTargets g)
+    nvec <- UV.thaw (edgeNexts g)
+    rref <- newPrimRef rvec
+    tref <- newPrimRef tvec
+    nref <- newPrimRef nvec
+    return MDigraph { graphVertexCount = vc
+                    , graphEdgeCount = ec
+                    , graphEdgeRoots = rref
+                    , graphEdgeTarget = tref
+                    , graphEdgeNext = nref
+                    }
 
 -- Helpers
+
+pureEdges :: Digraph -> Int -> Int -> [Edge]
+pureEdges _ _ (-1) = []
+pureEdges g src ix = E ix src dst : pureEdges g src nxt
+  where
+    dst = UV.unsafeIndex (edgeTargets g) ix
+    nxt = UV.unsafeIndex (edgeNexts g) ix
+
+pureSuccessors :: Digraph -> Int -> [Vertex]
+pureSuccessors _ (-1) = []
+pureSuccessors g ix = V s : pureSuccessors g nxt
+  where
+    s = UV.unsafeIndex (edgeTargets g) ix
+    nxt = UV.unsafeIndex (edgeNexts g) ix
 
 -- | Given the root of a successor list, traverse it and
 -- accumulate all edges, stopping at -1.
