@@ -57,6 +57,18 @@ instance (I.Graph g) => I.Graph (VertexLabeledGraph g nl) where
     g' <- I.thaw lg
     return $ VLMG g'
 
+predecessors :: (I.Bidirectional g) => VertexLabeledGraph g nl -> I.Vertex -> [I.Vertex]
+predecessors (VLG lg) = I.predecessors lg
+{-# INLINE predecessors #-}
+
+inEdges :: (I.Bidirectional g) => VertexLabeledGraph g nl -> I.Vertex -> [I.Edge]
+inEdges (VLG lg) = I.inEdges lg
+{-# INLINE inEdges #-}
+
+instance (I.Bidirectional g) => I.Bidirectional (VertexLabeledGraph g nl) where
+  predecessors = predecessors
+  inEdges = inEdges
+
 vertexLabel :: VertexLabeledGraph g nl -> I.Vertex -> Maybe nl
 vertexLabel (VLG g) = I.vertexLabel g
 {-# INLINE vertexLabel #-}

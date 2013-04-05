@@ -23,21 +23,57 @@ import qualified Data.Graph.Haggle.Interface as I
 newtype EdgeLabeledMGraph g el m = ELMG { unELMG :: A.LabeledMGraph g () el m }
 newtype EdgeLabeledGraph g el = ELG { unELG :: A.LabeledGraph g () el }
 
+vertices :: (I.Graph g) => EdgeLabeledGraph g el -> [I.Vertex]
+vertices = I.vertices . unELG
+{-# INLINE vertices #-}
+
+edges :: (I.Graph g) => EdgeLabeledGraph g el -> [I.Edge]
+edges = I.edges . unELG
+{-# INLINE edges #-}
+
+successors :: (I.Graph g) => EdgeLabeledGraph g el -> I.Vertex -> [I.Vertex]
+successors (ELG lg) = I.successors lg
+{-# INLINE successors #-}
+
+outEdges :: (I.Graph g) => EdgeLabeledGraph g el -> I.Vertex -> [I.Edge]
+outEdges (ELG lg) = I.outEdges lg
+{-# INLINE outEdges #-}
+
+edgeExists :: (I.Graph g) => EdgeLabeledGraph g el -> I.Vertex -> I.Vertex -> Bool
+edgeExists (ELG lg) = I.edgeExists lg
+{-# INLINE edgeExists #-}
+
 instance (I.Graph g) => I.Graph (EdgeLabeledGraph g el) where
   type MutableGraph (EdgeLabeledGraph g el) =
     EdgeLabeledMGraph (I.MutableGraph g) el
-  vertices = I.vertices . unELG
-  edges = I.edges . unELG
-  successors (ELG lg) = I.successors lg
-  outEdges (ELG lg) = I.outEdges lg
-  edgeExists (ELG lg) = I.edgeExists lg
+  vertices = vertices
+  edges = edges
+  successors = successors
+  outEdges = outEdges
+  edgeExists = edgeExists
   thaw (ELG lg) = do
     g' <- I.thaw lg
     return $ ELMG g'
 
+predecessors :: (I.Bidirectional g) => EdgeLabeledGraph g el -> I.Vertex -> [I.Vertex]
+predecessors (ELG lg) = I.predecessors lg
+{-# INLINE predecessors #-}
+
+inEdges :: (I.Bidirectional g) => EdgeLabeledGraph g el -> I.Vertex -> [I.Edge]
+inEdges (ELG lg) = I.inEdges lg
+{-# INLINE inEdges #-}
+
+instance (I.Bidirectional g) => I.Bidirectional (EdgeLabeledGraph g el) where
+  predecessors = predecessors
+  inEdges = inEdges
+
+edgeLabel :: EdgeLabeledGraph g el -> I.Edge -> Maybe el
+edgeLabel (ELG lg) = I.edgeLabel lg
+{-# INLINE edgeLabel #-}
+
 instance I.HasEdgeLabel (EdgeLabeledGraph g el) where
   type EdgeLabel (EdgeLabeledGraph g el) = el
-  edgeLabel (ELG lg) = I.edgeLabel lg
+  edgeLabel = edgeLabel
 
 newEdgeLabeledGraph :: (PrimMonad m, I.MGraph g)
                     => m (g m)
