@@ -136,12 +136,12 @@ instance Graph Digraph where
   vertices g = map V [0 .. UV.length (edgeRoots g) - 1]
   edges g = concatMap (outEdges g) (vertices g)
   successors g (V v)
-    | v >= UV.length (edgeRoots g) = []
+    | outOfRange g v = []
     | otherwise =
       let root = UV.unsafeIndex (edgeRoots g) v
       in pureSuccessors g root
   outEdges g (V v)
-    | v >= UV.length (edgeRoots g) = []
+    | outOfRange g v = []
     | otherwise =
       let root = UV.unsafeIndex (edgeRoots g) v
       in pureEdges g v root
@@ -163,6 +163,9 @@ instance Graph Digraph where
                     }
 
 -- Helpers
+
+outOfRange :: Digraph -> Int -> Bool
+outOfRange g = (>= UV.length (edgeRoots g))
 
 pureEdges :: Digraph -> Int -> Int -> [Edge]
 pureEdges _ _ (-1) = []
