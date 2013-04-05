@@ -15,7 +15,8 @@
 --    the source node.
 module Data.Graph.Haggle.Digraph (
   MDigraph,
-  Digraph
+  Digraph,
+  newMDigraph
   ) where
 
 import Control.Monad ( when )
@@ -44,6 +45,9 @@ data Digraph =
 
 defaultSize :: Int
 defaultSize = 128
+
+newMDigraph :: (PrimMonad m) => m (MDigraph m)
+newMDigraph = new
 
 instance MGraph MDigraph where
   type ImmutableGraph MDigraph = Digraph
