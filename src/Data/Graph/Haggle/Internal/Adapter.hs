@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeFamilies, FlexibleInstances, MultiParamTypeClasses #-}
 -- | This internal module implements code shared between all of the
 -- adapter interfaces.  The adapters add support for vertex and edge
 -- labels without modifications to the underlying graph.  Any graph
@@ -13,20 +13,7 @@ module Data.Graph.Haggle.Internal.Adapter (
   -- * Mutable graph API
   newLabeledGraph,
   newSizedLabeledGraph,
-  addLabeledVertex,
-  addLabeledEdge,
-  getEdgeLabel,
-  getVertexLabel,
-  getSuccessors,
-  getOutEdges,
-  countVertices,
-  countEdges,
-  getPredecessors,
-  getInEdges,
-  freeze,
   -- * Immutable graph API
-  -- edgeLabel,
-  -- vertexLabel,
   fromEdgeList,
   -- * Helpers
   ensureEdgeLabelStorage,
@@ -87,7 +74,7 @@ newSizedLabeledGraph newG szVertices szEdges = do
              , edgeLabelStorage = eref
              }
 
-addLabeledVertex :: (PrimMonad m, I.MGraph g)
+addLabeledVertex :: (PrimMonad m, I.MGraph g, I.MAddVertex g)
                  => LabeledMGraph g nl el m
                  -> nl
                  -> m I.Vertex
@@ -122,7 +109,7 @@ getVertexLabel lg v = do
       nlVec <- readPrimRef (nodeLabelStorage lg)
       Just `liftM` MV.read nlVec (I.vertexId v)
 
-addLabeledEdge :: (PrimMonad m, I.MGraph g)
+addLabeledEdge :: (PrimMonad m, I.MGraph g, I.MAddEdge g)
                => LabeledMGraph g nl el m
                -> I.Vertex
                -> I.Vertex
@@ -168,6 +155,14 @@ getInEdges :: (PrimMonad m, I.MBidirectional g)
 getInEdges lg = I.getInEdges (rawMGraph lg)
 {-# INLINE getInEdges #-}
 
+checkEdgeExists :: (PrimMonad m, I.MGraph g)
+                => LabeledMGraph g nl el m
+                -> I.Vertex
+                -> I.Vertex
+                -> m Bool
+checkEdgeExists lg = I.checkEdgeExists (rawMGraph lg)
+{-# INLINE checkEdgeExists #-}
+
 freeze :: (PrimMonad m, I.MGraph g)
        => LabeledMGraph g nl el m
        -> m (LabeledGraph (I.ImmutableGraph g) nl el)
@@ -183,6 +178,29 @@ freeze lg = do
             , nodeLabelStore = ns'
             , edgeLabelStore = es'
             }
+
+instance (I.MGraph g) => I.MGraph (LabeledMGraph g nl el) where
+  type ImmutableGraph (LabeledMGraph g nl el) = LabeledGraph (I.ImmutableGraph g) nl el
+  getSuccessors = getSuccessors
+  getOutEdges = getOutEdges
+  countEdges = countEdges
+  countVertices = countVertices
+  checkEdgeExists = checkEdgeExists
+  freeze = freeze
+
+instance (I.MBidirectional g) => I.MBidirectional (LabeledMGraph g nl el) where
+  getPredecessors = getPredecessors
+  getInEdges = getInEdges
+
+instance (I.MAddEdge g) => I.MLabeledEdge (LabeledMGraph g nl el) where
+  type MEdgeLabel (LabeledMGraph g nl el) = el
+  getEdgeLabel = getEdgeLabel
+  addLabeledEdge = addLabeledEdge
+
+instance (I.MAddVertex g) => I.MLabeledVertex (LabeledMGraph g nl el) where
+  type MVertexLabel (LabeledMGraph g nl el) = nl
+  getVertexLabel = getVertexLabel
+  addLabeledVertex = addLabeledVertex
 
 vertices :: (I.Graph g) => LabeledGraph g nl el -> [I.Vertex]
 vertices = I.vertices . rawGraph

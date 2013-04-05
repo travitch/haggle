@@ -5,17 +5,6 @@ module Data.Graph.Haggle.LabelAdapter (
   -- * Mutable Graph API
   newLabeledGraph,
   newSizedLabeledGraph,
-  addLabeledVertex,
-  addLabeledEdge,
-  getVertexLabel,
-  getEdgeLabel,
-  getSuccessors,
-  getOutEdges,
-  countVertices,
-  countEdges,
-  getPredecessors,
-  getInEdges,
-  freeze,
   -- * Immutable Graph API
   fromEdgeList,
   ) where

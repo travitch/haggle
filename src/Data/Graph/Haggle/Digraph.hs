@@ -16,7 +16,8 @@
 module Data.Graph.Haggle.Digraph (
   MDigraph,
   Digraph,
-  newMDigraph
+  newMDigraph,
+  newSizedMDigraph
   ) where
 
 import Control.Monad ( when )
@@ -47,60 +48,30 @@ defaultSize :: Int
 defaultSize = 128
 
 newMDigraph :: (PrimMonad m) => m (MDigraph m)
-newMDigraph = new
+newMDigraph = newSizedMDigraph defaultSize defaultSize
+
+newSizedMDigraph :: (PrimMonad m) => Int -> Int -> m (MDigraph m)
+newSizedMDigraph szNodes szEdges = do
+  when (szNodes < 0 || szEdges < 0) $ error "Negative size (newSized)"
+  nn <- newPrimRef 0
+  en <- newPrimRef 0
+  nVec <- MUV.new szNodes
+  nVecRef <- newPrimRef nVec
+  eTarget <- MUV.new szEdges
+  eTargetRef <- newPrimRef eTarget
+  eNext <- MUV.new szEdges
+  eNextRef <- newPrimRef eNext
+  return $! MDigraph { graphVertexCount = nn
+                   , graphEdgeRoots = nVecRef
+                   , graphEdgeCount = en
+                   , graphEdgeTarget = eTargetRef
+                   , graphEdgeNext = eNextRef
+                   }
+
+
 
 instance MGraph MDigraph where
   type ImmutableGraph MDigraph = Digraph
-  new = newSized defaultSize defaultSize
-  newSized szNodes szEdges = do
-    when (szNodes < 0 || szEdges < 0) $ error "Negative size (newSized)"
-    nn <- newPrimRef 0
-    en <- newPrimRef 0
-    nVec <- MUV.new szNodes
-    nVecRef <- newPrimRef nVec
-    eTarget <- MUV.new szEdges
-    eTargetRef <- newPrimRef eTarget
-    eNext <- MUV.new szEdges
-    eNextRef <- newPrimRef eNext
-    return $! MDigraph { graphVertexCount = nn
-                     , graphEdgeRoots = nVecRef
-                     , graphEdgeCount = en
-                     , graphEdgeTarget = eTargetRef
-                     , graphEdgeNext = eNextRef
-                     }
-
-  addVertex g = do
-    ensureNodeSpace g
-    vid <- readPrimRef r
-    modifyPrimRef' r (+1)
-    vec <- readPrimRef (graphEdgeRoots g)
-    MUV.write vec vid (-1)
-    return (V vid)
-    where
-      r = graphVertexCount g
-
-  addEdge g (V src) (V dst) = do
-    nVerts <- readPrimRef (graphVertexCount g)
-    case src >= nVerts || dst >= nVerts of
-      True -> return Nothing
-      False -> do
-        ensureEdgeSpace g
-        eid <- readPrimRef (graphEdgeCount g)
-        modifyPrimRef' (graphEdgeCount g) (+1)
-        rootVec <- readPrimRef (graphEdgeRoots g)
-        -- The current list of edges for src
-        curListHead <- MUV.read rootVec src
-
-        -- Now create the new edge
-        nextVec <- readPrimRef (graphEdgeNext g)
-        targetVec <- readPrimRef (graphEdgeTarget g)
-        MUV.write nextVec eid curListHead
-        MUV.write targetVec eid dst
-
-        -- The list now starts at our new edge
-        MUV.write rootVec src eid
-        return $ Just (E eid src dst)
-
   getOutEdges g (V src) = do
     nVerts <- readPrimRef (graphVertexCount g)
     case src >= nVerts of
@@ -130,6 +101,43 @@ instance MGraph MDigraph where
                     , edgeTargets = targets'
                     , edgeNexts = nexts'
                     }
+
+instance MAddVertex MDigraph where
+  addVertex g = do
+    ensureNodeSpace g
+    vid <- readPrimRef r
+    modifyPrimRef' r (+1)
+    vec <- readPrimRef (graphEdgeRoots g)
+    MUV.write vec vid (-1)
+    return (V vid)
+    where
+      r = graphVertexCount g
+
+instance MAddEdge MDigraph where
+  addEdge g (V src) (V dst) = do
+    nVerts <- readPrimRef (graphVertexCount g)
+    case src >= nVerts || dst >= nVerts of
+      True -> return Nothing
+      False -> do
+        ensureEdgeSpace g
+        eid <- readPrimRef (graphEdgeCount g)
+        modifyPrimRef' (graphEdgeCount g) (+1)
+        rootVec <- readPrimRef (graphEdgeRoots g)
+        -- The current list of edges for src
+        curListHead <- MUV.read rootVec src
+
+        -- Now create the new edge
+        nextVec <- readPrimRef (graphEdgeNext g)
+        targetVec <- readPrimRef (graphEdgeTarget g)
+        MUV.write nextVec eid curListHead
+        MUV.write targetVec eid dst
+
+        -- The list now starts at our new edge
+        MUV.write rootVec src eid
+        return $ Just (E eid src dst)
+
+
+
 
 instance Graph Digraph where
   type MutableGraph Digraph = MDigraph

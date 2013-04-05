@@ -5,17 +5,6 @@ module Data.Graph.Haggle.VertexLabelAdapter (
   -- * Mutable Graph API
   newVertexLabeledGraph,
   newSizedVertexLabeledGraph,
-  addEdge,
-  addLabeledVertex,
-  getVertexLabel,
-  getSuccessors,
-  getOutEdges,
-  countVertices,
-  countEdges,
-  getPredecessors,
-  getInEdges,
-  freeze,
-  -- * Immutable Graph API
   ) where
 
 import Control.Monad.Primitive
@@ -95,7 +84,7 @@ newSizedVertexLabeledGraph newG szV szE = do
   return $ VLMG g
 {-# INLINE newSizedVertexLabeledGraph #-}
 
-addEdge :: (PrimMonad m, I.MGraph g)
+addEdge :: (PrimMonad m, I.MGraph g, I.MAddEdge g)
         => VertexLabeledMGraph g nl m
         -> I.Vertex
         -> I.Vertex
@@ -103,55 +92,86 @@ addEdge :: (PrimMonad m, I.MGraph g)
 addEdge lg = I.addEdge (A.rawMGraph (unVLMG lg))
 {-# INLINE addEdge #-}
 
-addLabeledVertex :: (PrimMonad m, I.MGraph g)
+addLabeledVertex :: (PrimMonad m, I.MGraph g, I.MAddVertex g)
                  => VertexLabeledMGraph g nl m
                  -> nl
                  -> m I.Vertex
-addLabeledVertex lg = A.addLabeledVertex (unVLMG lg)
+addLabeledVertex lg = I.addLabeledVertex (unVLMG lg)
 {-# INLINE addLabeledVertex #-}
 
-getVertexLabel :: (PrimMonad m, I.MGraph g)
+getVertexLabel :: (PrimMonad m, I.MGraph g, I.MAddVertex g)
                => VertexLabeledMGraph g nl m
                -> I.Vertex
                -> m (Maybe nl)
-getVertexLabel lg = A.getVertexLabel (unVLMG lg)
+getVertexLabel lg = I.getVertexLabel (unVLMG lg)
 {-# INLINE getVertexLabel #-}
 
 getSuccessors :: (PrimMonad m, I.MGraph g)
               => VertexLabeledMGraph g nl m
               -> I.Vertex
               -> m [I.Vertex]
-getSuccessors lg = A.getSuccessors (unVLMG lg)
+getSuccessors lg = I.getSuccessors (unVLMG lg)
 {-# INLINE getSuccessors #-}
 
 getOutEdges :: (PrimMonad m, I.MGraph g)
             => VertexLabeledMGraph g nl m -> I.Vertex -> m [I.Edge]
-getOutEdges lg = A.getOutEdges (unVLMG lg)
+getOutEdges lg = I.getOutEdges (unVLMG lg)
 {-# INLINE getOutEdges #-}
 
 countVertices :: (PrimMonad m, I.MGraph g) => VertexLabeledMGraph g nl m -> m Int
-countVertices = A.countVertices . unVLMG
+countVertices = I.countVertices . unVLMG
 {-# INLINE countVertices #-}
 
 countEdges :: (PrimMonad m, I.MGraph g) => VertexLabeledMGraph g nl m -> m Int
-countEdges = A.countEdges . unVLMG
+countEdges = I.countEdges . unVLMG
 {-# INLINE countEdges #-}
 
 getPredecessors :: (PrimMonad m, I.MBidirectional g)
                 => VertexLabeledMGraph g nl m -> I.Vertex -> m [I.Vertex]
-getPredecessors lg = A.getPredecessors (unVLMG lg)
+getPredecessors lg = I.getPredecessors (unVLMG lg)
 {-# INLINE getPredecessors #-}
 
 getInEdges :: (PrimMonad m, I.MBidirectional g)
            => VertexLabeledMGraph g nl m -> I.Vertex -> m [I.Edge]
-getInEdges lg = A.getInEdges (unVLMG lg)
+getInEdges lg = I.getInEdges (unVLMG lg)
 {-# INLINE getInEdges #-}
+
+checkEdgeExists :: (PrimMonad m, I.MGraph g)
+                => VertexLabeledMGraph g nl m
+                -> I.Vertex
+                -> I.Vertex
+                -> m Bool
+checkEdgeExists lg = I.checkEdgeExists (unVLMG lg)
+{-# INLINE checkEdgeExists #-}
 
 freeze :: (PrimMonad m, I.MGraph g)
        => VertexLabeledMGraph g nl m
        -> m (VertexLabeledGraph (I.ImmutableGraph g) nl)
 freeze lg = do
-  g' <- A.freeze (unVLMG lg)
+  g' <- I.freeze (unVLMG lg)
   return $ VLG g'
 {-# INLINE freeze #-}
+
+instance (I.MGraph g) => I.MGraph (VertexLabeledMGraph g nl) where
+  type ImmutableGraph (VertexLabeledMGraph g nl) =
+    VertexLabeledGraph (I.ImmutableGraph g) nl
+  getSuccessors = getSuccessors
+  getOutEdges = getOutEdges
+  countVertices = countVertices
+  countEdges = countEdges
+  checkEdgeExists = checkEdgeExists
+  freeze = freeze
+
+instance (I.MAddVertex g) => I.MLabeledVertex (VertexLabeledMGraph g nl) where
+  type MVertexLabel (VertexLabeledMGraph g nl) = nl
+  getVertexLabel = getVertexLabel
+  addLabeledVertex = addLabeledVertex
+
+instance (I.MBidirectional g) => I.MBidirectional (VertexLabeledMGraph g nl) where
+  getPredecessors = getPredecessors
+  getInEdges = getInEdges
+
+instance (I.MAddEdge g) => I.MAddEdge (VertexLabeledMGraph g nl) where
+  addEdge = addEdge
+
 

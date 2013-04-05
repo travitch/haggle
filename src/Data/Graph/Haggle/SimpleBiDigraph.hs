@@ -5,7 +5,9 @@
 -- number of edges leaving the soruce vertex).
 module Data.Graph.Haggle.SimpleBiDigraph (
   MBiDigraph,
-  BiDigraph
+  BiDigraph,
+  newMBiDigraph,
+  newSizedMBiDigraph
   ) where
 
 import Control.Monad ( when )
@@ -37,54 +39,26 @@ data BiDigraph =
 defaultSize :: Int
 defaultSize = 128
 
+newMBiDigraph :: (PrimMonad m) => m (MBiDigraph m)
+newMBiDigraph = newSizedMBiDigraph defaultSize
+
+newSizedMBiDigraph :: (PrimMonad m) => Int -> m (MBiDigraph m)
+newSizedMBiDigraph szNodes = do
+  when (szNodes < 0) $ error "Negative size (newSized)"
+  nn <- newPrimRef 0
+  en <- newPrimRef 0
+  pvec <- MV.new szNodes
+  svec <- MV.new szNodes
+  pref <- newPrimRef pvec
+  sref <- newPrimRef svec
+  return $! MBiDigraph { mgraphVertexCount = nn
+                       , mgraphEdgeCount = en
+                       , mgraphPreds = pref
+                       , mgraphSuccs = sref
+                       }
+
 instance MGraph MBiDigraph where
   type ImmutableGraph MBiDigraph = BiDigraph
-  new = newSized defaultSize defaultSize
-  newSized szNodes _ = do
-    when (szNodes < 0) $ error "Negative size (newSized)"
-    nn <- newPrimRef 0
-    en <- newPrimRef 0
-    pvec <- MV.new szNodes
-    svec <- MV.new szNodes
-    pref <- newPrimRef pvec
-    sref <- newPrimRef svec
-    return $! MBiDigraph { mgraphVertexCount = nn
-                         , mgraphEdgeCount = en
-                         , mgraphPreds = pref
-                         , mgraphSuccs = sref
-                         }
-
-  addVertex g = do
-    ensureNodeSpace g
-    vid <- readPrimRef r
-    modifyPrimRef' r (+1)
-    pvec <- readPrimRef (mgraphPreds g)
-    svec <- readPrimRef (mgraphSuccs g)
-    MV.write pvec vid IM.empty
-    MV.write svec vid IM.empty
-    return (V vid)
-    where
-      r = mgraphVertexCount g
-
-  addEdge g v1@(V src) v2@(V dst) = do
-    nVerts <- readPrimRef (mgraphVertexCount g)
-    exists <- checkEdgeExists g v1 v2
-    case exists || src >= nVerts || dst >= nVerts of
-      True -> return Nothing
-      False -> do
-        eid <- readPrimRef (mgraphEdgeCount g)
-        modifyPrimRef' (mgraphEdgeCount g) (+1)
-
-        pvec <- readPrimRef (mgraphPreds g)
-        preds <- MV.read pvec dst
-        MV.write pvec dst (IM.insert src eid preds)
-
-        svec <- readPrimRef (mgraphSuccs g)
-        succs <- MV.read svec src
-        MV.write svec src (IM.insert dst eid succs)
-
-        return $ Just (E eid src dst)
-
   getOutEdges g (V src) = do
     nVerts <- readPrimRef (mgraphVertexCount g)
     case src >= nVerts of
@@ -93,7 +67,6 @@ instance MGraph MBiDigraph where
         svec <- readPrimRef (mgraphSuccs g)
         succs <- MV.read svec src
         return $ IM.foldrWithKey' (\dst eid acc -> E eid src dst : acc) [] succs
-
 
   countVertices = readPrimRef . mgraphVertexCount
   countEdges = readPrimRef . mgraphEdgeCount
@@ -128,6 +101,39 @@ instance MGraph MBiDigraph where
                         , graphPreds = pvec'
                         , graphSuccs = svec'
                         }
+
+instance MAddVertex MBiDigraph where
+  addVertex g = do
+    ensureNodeSpace g
+    vid <- readPrimRef r
+    modifyPrimRef' r (+1)
+    pvec <- readPrimRef (mgraphPreds g)
+    svec <- readPrimRef (mgraphSuccs g)
+    MV.write pvec vid IM.empty
+    MV.write svec vid IM.empty
+    return (V vid)
+    where
+      r = mgraphVertexCount g
+
+instance MAddEdge MBiDigraph where
+  addEdge g v1@(V src) v2@(V dst) = do
+    nVerts <- readPrimRef (mgraphVertexCount g)
+    exists <- checkEdgeExists g v1 v2
+    case exists || src >= nVerts || dst >= nVerts of
+      True -> return Nothing
+      False -> do
+        eid <- readPrimRef (mgraphEdgeCount g)
+        modifyPrimRef' (mgraphEdgeCount g) (+1)
+
+        pvec <- readPrimRef (mgraphPreds g)
+        preds <- MV.read pvec dst
+        MV.write pvec dst (IM.insert src eid preds)
+
+        svec <- readPrimRef (mgraphSuccs g)
+        succs <- MV.read svec src
+        MV.write svec src (IM.insert dst eid succs)
+
+        return $ Just (E eid src dst)
 
 instance MBidirectional MBiDigraph where
   getPredecessors g (V vid) = do
