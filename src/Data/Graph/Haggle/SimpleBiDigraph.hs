@@ -149,7 +149,7 @@ instance MBidirectional MBiDigraph where
         return $ IM.foldrWithKey' (\src eid acc -> E eid src vid : acc) [] preds
 
 instance Graph BiDigraph where
-  type MutableGraph BiDigraph m = MBiDigraph m
+  type MutableGraph BiDigraph = MBiDigraph
   -- FIXME: This will be more complicated if we support removing vertices
   vertices g = map V [0 .. vertexCount g - 1]
   edges g = concatMap (outEdges g) (vertices g)

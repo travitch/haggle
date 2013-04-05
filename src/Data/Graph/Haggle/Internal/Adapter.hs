@@ -6,8 +6,10 @@
 --
 -- Analogous adapters will be added for the pure graph interface, too.
 module Data.Graph.Haggle.Internal.Adapter (
+  -- * Types
   LabeledMGraph(..),
   LabeledGraph(..),
+  -- * Mutable graph API
   newLabeledGraph,
   newSizedLabeledGraph,
   addLabeledVertex,
@@ -21,6 +23,16 @@ module Data.Graph.Haggle.Internal.Adapter (
   getPredecessors,
   getInEdges,
   freeze,
+  -- * Immutable graph API
+  edgeLabel,
+  vertexLabel,
+  vertices,
+  edges,
+  successors,
+  outEdges,
+  edgeExists,
+  thaw,
+  fromEdgeList,
   -- * Helpers
   ensureEdgeLabelStorage,
   ensureNodeLabelStorage
@@ -36,7 +48,7 @@ import qualified Data.Graph.Haggle.Interface as I
 
 -- | An adapter adding support for both vertex and edge labels for mutable
 -- graphs.
-data LabeledMGraph g m nl el =
+data LabeledMGraph g nl el m =
   LMG { rawMGraph :: g m
       , nodeLabelStorage :: PrimRef m (MVector (PrimState m) nl)
       , edgeLabelStorage :: PrimRef m (MVector (PrimState m) el)
@@ -52,7 +64,7 @@ data LabeledGraph g nl el =
 
 newLabeledGraph :: (PrimMonad m, I.MGraph g)
                 => m (g m)
-                -> m (LabeledMGraph g m nl el)
+                -> m (LabeledMGraph g nl el m)
 newLabeledGraph newG = do
   g <- newG
   nstore <- MV.new 128
@@ -68,7 +80,7 @@ newSizedLabeledGraph :: (PrimMonad m, I.MGraph g)
                      => (Int -> Int -> m (g m))
                      -> Int
                      -> Int
-                     -> m (LabeledMGraph g m nl el)
+                     -> m (LabeledMGraph g nl el m)
 newSizedLabeledGraph newG szVertices szEdges = do
   g <- newG szVertices szEdges
   nstore <- MV.new szVertices
@@ -81,7 +93,7 @@ newSizedLabeledGraph newG szVertices szEdges = do
              }
 
 addLabeledVertex :: (PrimMonad m, I.MGraph g)
-                 => LabeledMGraph g m nl el
+                 => LabeledMGraph g nl el m
                  -> nl
                  -> m I.Vertex
 addLabeledVertex lg nl = do
@@ -92,7 +104,7 @@ addLabeledVertex lg nl = do
   return v
 
 getEdgeLabel :: (PrimMonad m, I.MGraph g)
-             => LabeledMGraph g m nl el
+             => LabeledMGraph g nl el m
              -> I.Edge
              -> m (Maybe el)
 getEdgeLabel lg e = do
@@ -104,7 +116,7 @@ getEdgeLabel lg e = do
       Just `liftM` MV.read elVec (I.edgeId e)
 
 getVertexLabel :: (PrimMonad m, I.MGraph g)
-               => LabeledMGraph g m nl el
+               => LabeledMGraph g nl el m
                -> I.Vertex
                -> m (Maybe nl)
 getVertexLabel lg v = do
@@ -116,7 +128,7 @@ getVertexLabel lg v = do
       Just `liftM` MV.read nlVec (I.vertexId v)
 
 addLabeledEdge :: (PrimMonad m, I.MGraph g)
-               => LabeledMGraph g m nl el
+               => LabeledMGraph g nl el m
                -> I.Vertex
                -> I.Vertex
                -> el
@@ -132,31 +144,31 @@ addLabeledEdge lg src dst el = do
       return e
 
 getSuccessors :: (PrimMonad m, I.MGraph g)
-              => LabeledMGraph g m nl el
+              => LabeledMGraph g nl el m
               -> I.Vertex
               -> m [I.Vertex]
 getSuccessors lg = I.getSuccessors (rawMGraph lg)
 
 getOutEdges :: (PrimMonad m, I.MGraph g)
-            => LabeledMGraph g m nl el -> I.Vertex -> m [I.Edge]
+            => LabeledMGraph g nl el m -> I.Vertex -> m [I.Edge]
 getOutEdges lg = I.getOutEdges (rawMGraph lg)
 
-countVertices :: (PrimMonad m, I.MGraph g) => LabeledMGraph g m nl el -> m Int
+countVertices :: (PrimMonad m, I.MGraph g) => LabeledMGraph g nl el m -> m Int
 countVertices = I.countVertices . rawMGraph
 
-countEdges :: (PrimMonad m, I.MGraph g) => LabeledMGraph g m nl el -> m Int
+countEdges :: (PrimMonad m, I.MGraph g) => LabeledMGraph g nl el m -> m Int
 countEdges = I.countEdges . rawMGraph
 
 getPredecessors :: (PrimMonad m, I.MBidirectional g)
-                => LabeledMGraph g m nl el -> I.Vertex -> m [I.Vertex]
+                => LabeledMGraph g nl el m -> I.Vertex -> m [I.Vertex]
 getPredecessors lg = I.getPredecessors (rawMGraph lg)
 
 getInEdges :: (PrimMonad m, I.MBidirectional g)
-           => LabeledMGraph g m nl el -> I.Vertex -> m [I.Edge]
+           => LabeledMGraph g nl el m -> I.Vertex -> m [I.Edge]
 getInEdges lg = I.getInEdges (rawMGraph lg)
 
 freeze :: (PrimMonad m, I.MGraph g)
-       => LabeledMGraph g m nl el
+       => LabeledMGraph g nl el m
        -> m (LabeledGraph (I.ImmutableGraph g) nl el)
 freeze lg = do
   g' <- I.freeze (rawMGraph lg)
@@ -171,10 +183,67 @@ freeze lg = do
             , edgeLabelStore = es'
             }
 
+vertices :: (I.Graph g) => LabeledGraph g nl el -> [I.Vertex]
+vertices = I.vertices . rawGraph
+
+edges :: (I.Graph g) => LabeledGraph g nl el -> [I.Edge]
+edges = I.edges . rawGraph
+
+successors :: (I.Graph g) => LabeledGraph g nl el -> I.Vertex -> [I.Vertex]
+successors lg = I.successors (rawGraph lg)
+
+outEdges :: (I.Graph g) => LabeledGraph g nl el -> I.Vertex -> [I.Edge]
+outEdges lg = I.outEdges (rawGraph lg)
+
+edgeExists :: (I.Graph g) => LabeledGraph g nl el -> I.Vertex -> I.Vertex -> Bool
+edgeExists lg = I.edgeExists (rawGraph lg)
+
+thaw :: (PrimMonad m, I.Graph g)
+     => LabeledGraph g nl el
+     -> m (LabeledMGraph (I.MutableGraph g) nl el m)
+thaw lg = do
+  g' <- I.thaw (rawGraph lg)
+  nlVec <- V.thaw (nodeLabelStore lg)
+  elVec <- V.thaw (edgeLabelStore lg)
+  nref <- newPrimRef nlVec
+  eref <- newPrimRef elVec
+  return LMG { rawMGraph = g'
+             , nodeLabelStorage = nref
+             , edgeLabelStorage = eref
+             }
+-- data LabeledGraph g nl el =
+--   LG { rawGraph :: g
+--      , nodeLabelStore :: Vector nl
+--      , edgeLabelStore :: Vector el
+--      }
+--
+instance (I.Graph g) => I.Graph (LabeledGraph g nl el) where
+  type MutableGraph = LabeledMGraph g nl el
+  vertices = vertices
+  edges = edges
+  successors = successors
+  outEdges = outEdges
+  edgeExists = edgeExists
+--  thaw = thaw
+
+edgeLabel :: LabeledGraph g nl el -> I.Vertex -> Maybe el
+edgeLabel lg v =
+  edgeLabelStore lg V.!? I.vertexId v
+
+vertexLabel :: LabeledGraph g nl el -> I.Vertex -> Maybe nl
+vertexLabel lg v =
+  nodeLabelStore lg V.!? I.vertexId v
+
+-- | Construct a graph from a labeled list of edges.  The node endpoint values
+-- are used as vertex labels, and the last element of the triple is used as an
+-- edge label.
+fromEdgeList :: (Eq a, Ord a, I.Graph g) => [(a, a, b)] -> g
+fromEdgeList = undefined
+
 -- Helpers
 
 ensureEdgeLabelStorage :: (PrimMonad m, I.MGraph g)
-                       => LabeledMGraph g m nl el -> m ()
+                       => LabeledMGraph g nl el m -> m ()
 ensureEdgeLabelStorage lg = do
   elVec <- readPrimRef (edgeLabelStorage lg)
   edgeCount <- I.countEdges (rawMGraph lg)
@@ -186,7 +255,7 @@ ensureEdgeLabelStorage lg = do
       writePrimRef (edgeLabelStorage lg) elVec'
 
 ensureNodeLabelStorage :: (PrimMonad m, I.MGraph g)
-                       => LabeledMGraph g m nl el -> m ()
+                       => LabeledMGraph g nl el m -> m ()
 ensureNodeLabelStorage lg = do
   nlVec <- readPrimRef (nodeLabelStorage lg)
   vertCount <- I.countVertices (rawMGraph lg)

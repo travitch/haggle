@@ -1,6 +1,8 @@
 module Data.Graph.Haggle.LabelAdapter (
+  -- * Types
   LabeledMGraph,
   LabeledGraph,
+  -- * Mutable Graph API
   newLabeledGraph,
   newSizedLabeledGraph,
   addLabeledVertex,
@@ -13,7 +15,17 @@ module Data.Graph.Haggle.LabelAdapter (
   countEdges,
   getPredecessors,
   getInEdges,
-  freeze
+  freeze,
+  -- * Immutable Graph API
+  edgeLabel,
+  vertexLabel,
+  vertices,
+  edges,
+  successors,
+  outEdges,
+  edgeExists,
+  thaw,
+  fromEdgeList,
   ) where
 
 import Data.Graph.Haggle.Internal.Adapter
