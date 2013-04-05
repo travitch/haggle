@@ -1,14 +1,17 @@
 {-# LANGUAGE KindSignatures, TypeFamilies #-}
 module Data.Graph.Haggle.Interface (
+  -- * Basic Types
   Vertex(..),
   Edge(..),
   vertexId,
   edgeId,
   edgeSource,
   edgeDest,
+  -- * Mutable Graphs
   MGraph(..),
   MRemovable(..),
   MBidirectional(..),
+  -- * Immutable Graphs
   Graph(..),
   Bidirectional(..)
   ) where
@@ -41,9 +44,6 @@ edgeSource (E _ s _) = V s
 edgeDest :: Edge -> Vertex
 edgeDest (E _ _ d) = V d
 {-# INLINE edgeDest #-}
-
--- FIXME: Maybe remove new from the typeclass?  It makes creating
--- new graphs kind of annoying.
 
 -- | The interface supported by a mutable graph.
 class MGraph (g :: (* -> *) -> *) where

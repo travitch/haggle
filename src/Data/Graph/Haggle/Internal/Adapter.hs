@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies #-}
 -- | This internal module implements code shared between all of the
 -- adapter interfaces.  The adapters add support for vertex and edge
 -- labels without modifications to the underlying graph.  Any graph
@@ -26,12 +27,6 @@ module Data.Graph.Haggle.Internal.Adapter (
   -- * Immutable graph API
   edgeLabel,
   vertexLabel,
-  vertices,
-  edges,
-  successors,
-  outEdges,
-  edgeExists,
-  thaw,
   fromEdgeList,
   -- * Helpers
   ensureEdgeLabelStorage,
@@ -211,20 +206,15 @@ thaw lg = do
              , nodeLabelStorage = nref
              , edgeLabelStorage = eref
              }
--- data LabeledGraph g nl el =
---   LG { rawGraph :: g
---      , nodeLabelStore :: Vector nl
---      , edgeLabelStore :: Vector el
---      }
---
+
 instance (I.Graph g) => I.Graph (LabeledGraph g nl el) where
-  type MutableGraph = LabeledMGraph g nl el
+  type MutableGraph (LabeledGraph g nl el) = LabeledMGraph (I.MutableGraph g) nl el
   vertices = vertices
   edges = edges
   successors = successors
   outEdges = outEdges
   edgeExists = edgeExists
---  thaw = thaw
+  thaw = thaw
 
 edgeLabel :: LabeledGraph g nl el -> I.Vertex -> Maybe el
 edgeLabel lg v =

@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeFamilies, MultiParamTypeClasses, FlexibleInstances #-}
 -- | This is a simple graph (it does not allow parallel edges).  To support
 -- this efficiently, it is less compact than 'Digraph' or 'BiDigraph'.  As
 -- a consequence, edge existence tests are efficient (logarithmic in the
@@ -178,7 +178,7 @@ instance Graph BiDigraph where
                       }
 
 
-instance Bidirectional BiDigraph where
+instance Bidirectional BiDigraph  where
   predecessors g (V v)
     | outOfRange g v = []
     | otherwise = map V $ IM.keys $ V.unsafeIndex (graphPreds g) v

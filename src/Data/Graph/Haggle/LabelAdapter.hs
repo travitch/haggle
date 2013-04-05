@@ -19,12 +19,6 @@ module Data.Graph.Haggle.LabelAdapter (
   -- * Immutable Graph API
   edgeLabel,
   vertexLabel,
-  vertices,
-  edges,
-  successors,
-  outEdges,
-  edgeExists,
-  thaw,
   fromEdgeList,
   ) where
 
