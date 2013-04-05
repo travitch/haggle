@@ -29,7 +29,8 @@ library
                    Data.Graph.Haggle.Interface,
                    Data.Graph.Haggle.LabelAdapter,
                    Data.Graph.Haggle.VertexLabelAdapter,
-                   Data.Graph.Haggle.EdgeLabelAdapter
+                   Data.Graph.Haggle.EdgeLabelAdapter,
+                   Data.Graph.Haggle.Internal.Basic
   other-modules: Data.Graph.Haggle.Internal.Adapter
   build-depends: base == 4.*,
                  vector >= 0.9,

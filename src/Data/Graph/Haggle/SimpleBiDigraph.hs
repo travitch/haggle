@@ -19,6 +19,7 @@ import qualified Data.Vector.Mutable as MV
 import qualified Data.Vector as V
 
 import Data.Graph.Haggle.Interface
+import Data.Graph.Haggle.Internal.Basic
 
 type EdgeID = Int
 

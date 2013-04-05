@@ -1,12 +1,8 @@
 {-# LANGUAGE KindSignatures, TypeFamilies #-}
 module Data.Graph.Haggle.Interface (
   -- * Basic Types
-  Vertex(..),
-  Edge(..),
-  vertexId,
-  edgeId,
-  edgeSource,
-  edgeDest,
+  Vertex,
+  Edge,
   -- * Mutable Graphs
   MGraph(..),
   MAddEdge(..),
@@ -23,33 +19,7 @@ module Data.Graph.Haggle.Interface (
   ) where
 
 import Control.Monad.Primitive
-
--- | An abstract representation of a vertex.
---
--- Note that the representation is currently exposed.  Do not rely on
--- this, as it is subject to change.
-newtype Vertex = V Int
-  deriving (Eq, Ord, Show)
-
--- | An edge between two vertices.
-data Edge = E {-# UNPACK #-}!Int {-# UNPACK #-}!Int {-# UNPACK #-}!Int
-  deriving (Eq, Ord, Show)
-
-vertexId :: Vertex -> Int
-vertexId (V vid) = vid
-{-# INLINE vertexId #-}
-
-edgeId :: Edge -> Int
-edgeId (E eid _ _) = eid
-{-# INLINE edgeId #-}
-
-edgeSource :: Edge -> Vertex
-edgeSource (E _ s _) = V s
-{-# INLINE edgeSource #-}
-
-edgeDest :: Edge -> Vertex
-edgeDest (E _ _ d) = V d
-{-# INLINE edgeDest #-}
+import Data.Graph.Haggle.Internal.Basic
 
 -- FIXME: Split out addVertex and addEdge so that the mutable graph wrappers
 -- can implement the rest of the functions (so there can be graph algorithm
