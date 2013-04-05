@@ -223,6 +223,14 @@ edgeExists :: (I.Graph g) => LabeledGraph g nl el -> I.Vertex -> I.Vertex -> Boo
 edgeExists lg = I.edgeExists (rawGraph lg)
 {-# INLINE edgeExists #-}
 
+maxVertexId :: (I.Graph g) => LabeledGraph g nl el -> Int
+maxVertexId = I.maxVertexId . rawGraph
+{-# INLINE maxVertexId #-}
+
+isEmpty :: (I.Graph g) => LabeledGraph g nl el -> Bool
+isEmpty = I.isEmpty . rawGraph
+{-# INLINE isEmpty #-}
+
 thaw :: (PrimMonad m, I.Graph g)
      => LabeledGraph g nl el
      -> m (LabeledMGraph (I.MutableGraph g) nl el m)
@@ -244,6 +252,8 @@ instance (I.Graph g) => I.Graph (LabeledGraph g nl el) where
   successors = successors
   outEdges = outEdges
   edgeExists = edgeExists
+  maxVertexId = maxVertexId
+  isEmpty = isEmpty
   thaw = thaw
 
 predecessors :: (I.Bidirectional g) => LabeledGraph g nl el -> I.Vertex -> [I.Vertex]

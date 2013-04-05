@@ -171,6 +171,8 @@ instance Graph SimpleBiDigraph where
   edgeExists g (V src) (V dst)
     | outOfRange g src || outOfRange g dst = False
     | otherwise = IM.member dst (V.unsafeIndex (graphSuccs g) src)
+  maxVertexId g = V.length (graphSuccs g) - 1
+  isEmpty = (==0) . maxVertexId
   thaw g = do
     vc <- newPrimRef (vertexCount g)
     ec <- newPrimRef (edgeCount g)

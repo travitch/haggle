@@ -33,6 +33,14 @@ edgeExists :: (I.Graph g) => EdgeLabeledGraph g el -> I.Vertex -> I.Vertex -> Bo
 edgeExists (ELG lg) = I.edgeExists lg
 {-# INLINE edgeExists #-}
 
+maxVertexId :: (I.Graph g) => EdgeLabeledGraph g el -> Int
+maxVertexId = I.maxVertexId . unELG
+{-# INLINE maxVertexId #-}
+
+isEmpty :: (I.Graph g) => EdgeLabeledGraph g el -> Bool
+isEmpty = I.isEmpty . unELG
+{-# INLINE isEmpty #-}
+
 instance (I.Graph g) => I.Graph (EdgeLabeledGraph g el) where
   type MutableGraph (EdgeLabeledGraph g el) =
     EdgeLabeledMGraph (I.MutableGraph g) el
@@ -41,6 +49,8 @@ instance (I.Graph g) => I.Graph (EdgeLabeledGraph g el) where
   successors = successors
   outEdges = outEdges
   edgeExists = edgeExists
+  maxVertexId = maxVertexId
+  isEmpty = isEmpty
   thaw (ELG lg) = do
     g' <- I.thaw lg
     return $ ELMG g'

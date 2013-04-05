@@ -91,6 +91,8 @@ class Graph g where
   successors :: g -> Vertex -> [Vertex]
   outEdges :: g -> Vertex -> [Edge]
   edgeExists :: g -> Vertex -> Vertex -> Bool
+  maxVertexId :: g -> Int
+  isEmpty :: g -> Bool
   thaw :: (PrimMonad m) => g -> m (MutableGraph g m)
 
 -- | The interface for immutable graphs with efficient access to
