@@ -104,7 +104,7 @@ instance MGraph MBiDigraph where
         succs <- MV.read svec src
         return $ map V $ IM.keys succs
 
-  edgeExists g (V src) (V dst) = do
+  checkEdgeExists g (V src) (V dst) = do
     nVerts <- readPrimRef (mgraphVertexCount g)
     case src >= nVerts || dst >= nVerts of
       True -> return False

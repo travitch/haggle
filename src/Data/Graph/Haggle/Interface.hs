@@ -77,8 +77,8 @@ class MGraph (g :: (* -> *) -> *) where
   -- | Edge existence test; this has a default implementation,
   -- but can be overridden if an implementation can support a
   -- better-than-linear version.
-  edgeExists :: (PrimMonad m) => g m -> Vertex -> Vertex -> m Bool
-  edgeExists g src dst = do
+  checkEdgeExists :: (PrimMonad m) => g m -> Vertex -> Vertex -> m Bool
+  checkEdgeExists g src dst = do
     succs <- getSuccessors g src
     return $ any (==dst) succs
 
