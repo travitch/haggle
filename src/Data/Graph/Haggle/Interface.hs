@@ -13,7 +13,9 @@ module Data.Graph.Haggle.Interface (
   MBidirectional(..),
   -- * Immutable Graphs
   Graph(..),
-  Bidirectional(..)
+  Bidirectional(..),
+  HasEdgeLabel(..),
+  HasVertexLabel(..)
   ) where
 
 import Control.Monad.Primitive
@@ -121,7 +123,19 @@ class Graph g where
   edgeExists :: g -> Vertex -> Vertex -> Bool
   thaw :: (PrimMonad m) => g -> m (MutableGraph g m)
 
+-- | The interface for immutable graphs with efficient access to
+-- incoming edges.
 class (Graph g) => Bidirectional g where
   predecessors :: g -> Vertex -> [Vertex]
   inEdges :: g -> Vertex -> [Edge]
+
+-- | The interface for immutable graphs with labeled edges.
+class HasEdgeLabel g where
+  type EdgeLabel g
+  edgeLabel :: g -> Edge -> Maybe (EdgeLabel g)
+
+-- | The interface for immutable graphs with labeled vertices.
+class HasVertexLabel g where
+  type VertexLabel g
+  vertexLabel :: g -> Vertex -> Maybe (VertexLabel g)
 

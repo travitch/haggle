@@ -25,8 +25,8 @@ module Data.Graph.Haggle.Internal.Adapter (
   getInEdges,
   freeze,
   -- * Immutable graph API
-  edgeLabel,
-  vertexLabel,
+  -- edgeLabel,
+  -- vertexLabel,
   fromEdgeList,
   -- * Helpers
   ensureEdgeLabelStorage,
@@ -143,24 +143,30 @@ getSuccessors :: (PrimMonad m, I.MGraph g)
               -> I.Vertex
               -> m [I.Vertex]
 getSuccessors lg = I.getSuccessors (rawMGraph lg)
+{-# INLINE getSuccessors #-}
 
 getOutEdges :: (PrimMonad m, I.MGraph g)
             => LabeledMGraph g nl el m -> I.Vertex -> m [I.Edge]
 getOutEdges lg = I.getOutEdges (rawMGraph lg)
+{-# INLINE getOutEdges #-}
 
 countVertices :: (PrimMonad m, I.MGraph g) => LabeledMGraph g nl el m -> m Int
 countVertices = I.countVertices . rawMGraph
+{-# INLINE countVertices #-}
 
 countEdges :: (PrimMonad m, I.MGraph g) => LabeledMGraph g nl el m -> m Int
 countEdges = I.countEdges . rawMGraph
+{-# INLINE countEdges #-}
 
 getPredecessors :: (PrimMonad m, I.MBidirectional g)
                 => LabeledMGraph g nl el m -> I.Vertex -> m [I.Vertex]
 getPredecessors lg = I.getPredecessors (rawMGraph lg)
+{-# INLINE getPredecessors #-}
 
 getInEdges :: (PrimMonad m, I.MBidirectional g)
            => LabeledMGraph g nl el m -> I.Vertex -> m [I.Edge]
 getInEdges lg = I.getInEdges (rawMGraph lg)
+{-# INLINE getInEdges #-}
 
 freeze :: (PrimMonad m, I.MGraph g)
        => LabeledMGraph g nl el m
@@ -180,18 +186,23 @@ freeze lg = do
 
 vertices :: (I.Graph g) => LabeledGraph g nl el -> [I.Vertex]
 vertices = I.vertices . rawGraph
+{-# INLINE vertices #-}
 
 edges :: (I.Graph g) => LabeledGraph g nl el -> [I.Edge]
 edges = I.edges . rawGraph
+{-# INLINE edges #-}
 
 successors :: (I.Graph g) => LabeledGraph g nl el -> I.Vertex -> [I.Vertex]
 successors lg = I.successors (rawGraph lg)
+{-# INLINE successors #-}
 
 outEdges :: (I.Graph g) => LabeledGraph g nl el -> I.Vertex -> [I.Edge]
 outEdges lg = I.outEdges (rawGraph lg)
+{-# INLINE outEdges #-}
 
 edgeExists :: (I.Graph g) => LabeledGraph g nl el -> I.Vertex -> I.Vertex -> Bool
 edgeExists lg = I.edgeExists (rawGraph lg)
+{-# INLINE edgeExists #-}
 
 thaw :: (PrimMonad m, I.Graph g)
      => LabeledGraph g nl el
@@ -216,13 +227,15 @@ instance (I.Graph g) => I.Graph (LabeledGraph g nl el) where
   edgeExists = edgeExists
   thaw = thaw
 
-edgeLabel :: LabeledGraph g nl el -> I.Edge -> Maybe el
-edgeLabel lg e =
-  edgeLabelStore lg V.!? I.edgeId e
+instance I.HasEdgeLabel (LabeledGraph g nl el) where
+  type EdgeLabel (LabeledGraph g nl el) = el
+  edgeLabel lg e =
+    edgeLabelStore lg V.!? I.edgeId e
 
-vertexLabel :: LabeledGraph g nl el -> I.Vertex -> Maybe nl
-vertexLabel lg v =
-  nodeLabelStore lg V.!? I.vertexId v
+instance I.HasVertexLabel (LabeledGraph g nl el) where
+  type VertexLabel (LabeledGraph g nl el) = nl
+  vertexLabel lg v =
+    nodeLabelStore lg V.!? I.vertexId v
 
 -- | Construct a graph from a labeled list of edges.  The node endpoint values
 -- are used as vertex labels, and the last element of the triple is used as an

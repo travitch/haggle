@@ -17,8 +17,6 @@ module Data.Graph.Haggle.LabelAdapter (
   getInEdges,
   freeze,
   -- * Immutable Graph API
-  edgeLabel,
-  vertexLabel,
   fromEdgeList,
   ) where
 

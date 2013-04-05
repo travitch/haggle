@@ -14,8 +14,6 @@ module Data.Graph.Haggle.EdgeLabelAdapter (
   getPredecessors,
   getInEdges,
   freeze,
-  -- * Immutable Graph API
-  edgeLabel
   ) where
 
 import Control.Monad.Primitive
@@ -37,8 +35,9 @@ instance (I.Graph g) => I.Graph (EdgeLabeledGraph g el) where
     g' <- I.thaw lg
     return $ ELMG g'
 
-edgeLabel :: EdgeLabeledGraph g el -> I.Edge -> Maybe el
-edgeLabel (ELG lg) = A.edgeLabel lg
+instance I.HasEdgeLabel (EdgeLabeledGraph g el) where
+  type EdgeLabel (EdgeLabeledGraph g el) = el
+  edgeLabel (ELG lg) = I.edgeLabel lg
 
 newEdgeLabeledGraph :: (PrimMonad m, I.MGraph g)
                     => m (g m)

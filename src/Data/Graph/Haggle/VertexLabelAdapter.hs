@@ -16,7 +16,6 @@ module Data.Graph.Haggle.VertexLabelAdapter (
   getInEdges,
   freeze,
   -- * Immutable Graph API
-  vertexLabel
   ) where
 
 import Control.Monad.Primitive
@@ -38,8 +37,9 @@ instance (I.Graph g) => I.Graph (VertexLabeledGraph g nl) where
     g' <- I.thaw lg
     return $ VLMG g'
 
-vertexLabel :: VertexLabeledGraph g nl -> I.Vertex -> Maybe nl
-vertexLabel (VLG g) = A.vertexLabel g
+instance I.HasVertexLabel (VertexLabeledGraph g nl) where
+  type VertexLabel (VertexLabeledGraph g nl) = nl
+  vertexLabel (VLG g) = I.vertexLabel g
 
 newVertexLabeledGraph :: (PrimMonad m, I.MGraph g)
                       => m (g m)
