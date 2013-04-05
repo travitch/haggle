@@ -7,8 +7,10 @@ module Data.Graph.Haggle.Interface (
   edgeSource,
   edgeDest,
   MGraph(..),
+  MRemovable(..),
   MBidirectional(..),
-  Graph(..)
+  Graph(..),
+  Bidirectional(..)
   ) where
 
 import Control.Monad.Primitive
@@ -85,6 +87,14 @@ class MGraph (g :: (* -> *) -> *) where
   -- | Freeze the mutable graph into an immutable graph.
   freeze :: (PrimMonad m) => g m -> m (ImmutableGraph g)
 
+-- | An interface for graphs that allow vertex and edge removal.  Note that
+-- implementations are not required to reclaim storage from removed
+-- vertices (just make them inaccessible).
+class (MGraph g) => MRemovable g where
+  removeVertex :: (PrimMonad m) => g m -> Vertex -> m ()
+  removeEdgesBetween :: (PrimMonad m) => g m -> Vertex -> Vertex -> m ()
+  removeEdge :: (PrimMonad m) => g m -> Edge -> m ()
+
 -- | An interface for graphs that support looking at predecessor (incoming
 -- edges) efficiently.
 class (MGraph g) => MBidirectional g where
@@ -96,5 +106,12 @@ class Graph g where
   type MutableGraph g m
   vertices :: g -> [Vertex]
   edges :: g -> [Edge]
+  successors :: g -> Vertex -> [Vertex]
+  outEdges :: g -> Vertex -> [Edge]
+  edgeExists :: g -> Vertex -> Vertex -> Bool
   thaw :: (PrimMonad m) => g -> m (MutableGraph g m)
+
+class (Graph g) => Bidirectional g where
+  predecessors :: g -> Vertex -> [Vertex]
+  inEdges :: g -> Vertex -> [Edge]
 
