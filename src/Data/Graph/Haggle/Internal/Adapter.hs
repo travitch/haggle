@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeFamilies, FlexibleInstances, MultiParamTypeClasses #-}
+{-# LANGUAGE TypeFamilies #-}
 -- | This internal module implements code shared between all of the
 -- adapter interfaces.  The adapters add support for vertex and edge
 -- labels without modifications to the underlying graph.  Any graph

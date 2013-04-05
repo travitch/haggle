@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeFamilies, MultiParamTypeClasses, FlexibleInstances #-}
+{-# LANGUAGE TypeFamilies #-}
 -- | This is a simple graph (it does not allow parallel edges).  To support
 -- this efficiently, it is less compact than 'Digraph' or 'BiDigraph'.  As
 -- a consequence, edge existence tests are efficient (logarithmic in the
