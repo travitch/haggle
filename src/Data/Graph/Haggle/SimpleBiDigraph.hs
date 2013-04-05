@@ -66,9 +66,10 @@ instance MGraph MBiDigraph where
     where
       r = mgraphVertexCount g
 
-  addEdge g (V src) (V dst) = do
+  addEdge g v1@(V src) v2@(V dst) = do
     nVerts <- readPrimRef (mgraphVertexCount g)
-    case src >= nVerts || dst >= nVerts of
+    exists <- checkEdgeExists g v1 v2
+    case exists || src >= nVerts || dst >= nVerts of
       True -> return Nothing
       False -> do
         eid <- readPrimRef (mgraphEdgeCount g)
