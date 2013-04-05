@@ -11,7 +11,7 @@
 --
 --  * Predecessors are not accessible
 --
---  * Edge existence tests are *linear* in the number of edges for
+--  * Edge existence tests are /linear/ in the number of edges for
 --    the source node.
 module Data.Graph.Haggle.Digraph (
   MDigraph,
@@ -47,9 +47,15 @@ data Digraph =
 defaultSize :: Int
 defaultSize = 128
 
+-- | Create a new empty mutable graph with a small amount of storage
+-- reserved for vertices and edges.
 newMDigraph :: (PrimMonad m) => m (MDigraph m)
 newMDigraph = newSizedMDigraph defaultSize defaultSize
 
+-- | Create a new empty graph with storage reserved for @szVerts@ vertices
+-- and @szEdges@ edges.
+--
+-- > g <- newSizedMDigraph szVerts szEdges
 newSizedMDigraph :: (PrimMonad m) => Int -> Int -> m (MDigraph m)
 newSizedMDigraph szNodes szEdges = do
   when (szNodes < 0 || szEdges < 0) $ error "Negative size (newSized)"

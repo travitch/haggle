@@ -2,7 +2,7 @@
 -- | This is a simple graph (it does not allow parallel edges).  To support
 -- this efficiently, it is less compact than 'Digraph' or 'BiDigraph'.  As
 -- a consequence, edge existence tests are efficient (logarithmic in the
--- number of edges leaving the soruce vertex).
+-- number of edges leaving the source vertex).
 module Data.Graph.Haggle.SimpleBiDigraph (
   MBiDigraph,
   BiDigraph,
@@ -40,10 +40,10 @@ defaultSize :: Int
 defaultSize = 128
 
 newMBiDigraph :: (PrimMonad m) => m (MBiDigraph m)
-newMBiDigraph = newSizedMBiDigraph defaultSize
+newMBiDigraph = newSizedMBiDigraph defaultSize 0
 
-newSizedMBiDigraph :: (PrimMonad m) => Int -> m (MBiDigraph m)
-newSizedMBiDigraph szNodes = do
+newSizedMBiDigraph :: (PrimMonad m) => Int -> Int -> m (MBiDigraph m)
+newSizedMBiDigraph szNodes _ = do
   when (szNodes < 0) $ error "Negative size (newSized)"
   nn <- newPrimRef 0
   en <- newPrimRef 0

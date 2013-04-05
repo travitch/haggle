@@ -1,7 +1,17 @@
 name: haggle
 version: 0.1.0.0
-synopsis: Another Haskell graph library
--- description:
+synopsis: A Haskell graph library offering mutable and immutable graphs
+description: This graph library provides both mutable and immutable graphs.
+             Graphs are constructed in IO or ST via mutation and then
+             /frozen/ into immutable graphs.
+
+             Algorithms (for the most part) work over immutable graphs.
+
+             This differs from FGL, which has only inductive graphs.  Those
+             graphs offer an immutable API where a new graph is constructed
+             when nodes are added or removed.  The approach taken in this
+             library allows for much more compact graphs than are possible
+             while supporting the FGL API.
 license: BSD3
 license-file: LICENSE
 author: Tristan Ravitch
