@@ -216,9 +216,9 @@ instance (I.Graph g) => I.Graph (LabeledGraph g nl el) where
   edgeExists = edgeExists
   thaw = thaw
 
-edgeLabel :: LabeledGraph g nl el -> I.Vertex -> Maybe el
-edgeLabel lg v =
-  edgeLabelStore lg V.!? I.vertexId v
+edgeLabel :: LabeledGraph g nl el -> I.Edge -> Maybe el
+edgeLabel lg e =
+  edgeLabelStore lg V.!? I.edgeId e
 
 vertexLabel :: LabeledGraph g nl el -> I.Vertex -> Maybe nl
 vertexLabel lg v =
