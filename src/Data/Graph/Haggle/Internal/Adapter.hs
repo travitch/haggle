@@ -26,7 +26,7 @@ import Data.PrimRef
 import Data.Vector ( MVector, Vector )
 import qualified Data.Vector as V
 import qualified Data.Vector.Mutable as MV
-import qualified Data.Graph.Haggle.Interface as I
+import qualified Data.Graph.Haggle as I
 import qualified Data.Graph.Haggle.Internal.Basic as I
 
 -- | An adapter adding support for both vertex and edge labels for mutable

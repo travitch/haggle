@@ -27,7 +27,7 @@ import Data.PrimRef
 import qualified Data.Vector.Unboxed.Mutable as MUV
 import qualified Data.Vector.Unboxed as UV
 
-import Data.Graph.Haggle.Interface
+import Data.Graph.Haggle
 import Data.Graph.Haggle.Internal.Basic
 
 -- | This is a compact (mutable) directed graph.

@@ -1,5 +1,5 @@
 {-# LANGUAGE KindSignatures, TypeFamilies #-}
-module Data.Graph.Haggle.Interface (
+module Data.Graph.Haggle (
   -- * Basic Types
   Vertex,
   Edge,

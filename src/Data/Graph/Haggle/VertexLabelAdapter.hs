@@ -8,8 +8,8 @@ module Data.Graph.Haggle.VertexLabelAdapter (
   ) where
 
 import Control.Monad.Primitive
+import qualified Data.Graph.Haggle as I
 import qualified Data.Graph.Haggle.Internal.Adapter as A
-import qualified Data.Graph.Haggle.Interface as I
 
 newtype VertexLabeledMGraph g nl m = VLMG { unVLMG :: A.LabeledMGraph g nl () m }
 newtype VertexLabeledGraph g nl = VLG { unVLG :: A.LabeledGraph g nl () }

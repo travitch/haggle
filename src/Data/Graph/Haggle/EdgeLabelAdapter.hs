@@ -7,8 +7,8 @@ module Data.Graph.Haggle.EdgeLabelAdapter (
   ) where
 
 import Control.Monad.Primitive
+import qualified Data.Graph.Haggle as I
 import qualified Data.Graph.Haggle.Internal.Adapter as A
-import qualified Data.Graph.Haggle.Interface as I
 
 newtype EdgeLabeledMGraph g el m = ELMG { unELMG :: A.LabeledMGraph g () el m }
 newtype EdgeLabeledGraph g el = ELG { unELG :: A.LabeledGraph g () el }
