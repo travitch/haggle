@@ -4,10 +4,10 @@
 -- a consequence, edge existence tests are efficient (logarithmic in the
 -- number of edges leaving the source vertex).
 module Data.Graph.Haggle.SimpleBiDigraph (
-  MBiDigraph,
-  BiDigraph,
-  newMBiDigraph,
-  newSizedMBiDigraph
+  MSimpleBiDigraph,
+  SimpleBiDigraph,
+  newMSimpleBiDigraph,
+  newSizedMSimpleBiDigraph
   ) where
 
 import Control.Monad ( when )
@@ -23,14 +23,14 @@ import Data.Graph.Haggle.Internal.Basic
 
 type EdgeID = Int
 
-data MBiDigraph m = -- See Note [Graph Representation]
+data MSimpleBiDigraph m = -- See Note [Graph Representation]
   MBiDigraph { mgraphVertexCount :: PrimRef m Int
              , mgraphEdgeCount :: PrimRef m Int
              , mgraphPreds :: PrimRef m (MV.MVector (PrimState m) (IntMap EdgeID))
              , mgraphSuccs :: PrimRef m (MV.MVector (PrimState m) (IntMap EdgeID))
              }
 
-data BiDigraph =
+data SimpleBiDigraph =
   BiDigraph { vertexCount :: {-# UNPACK #-} !Int
             , edgeCount :: {-# UNPACK #-} !Int
             , graphPreds :: V.Vector (IntMap EdgeID)
@@ -40,11 +40,11 @@ data BiDigraph =
 defaultSize :: Int
 defaultSize = 128
 
-newMBiDigraph :: (PrimMonad m) => m (MBiDigraph m)
-newMBiDigraph = newSizedMBiDigraph defaultSize 0
+newMSimpleBiDigraph :: (PrimMonad m) => m (MSimpleBiDigraph m)
+newMSimpleBiDigraph = newSizedMSimpleBiDigraph defaultSize 0
 
-newSizedMBiDigraph :: (PrimMonad m) => Int -> Int -> m (MBiDigraph m)
-newSizedMBiDigraph szNodes _ = do
+newSizedMSimpleBiDigraph :: (PrimMonad m) => Int -> Int -> m (MSimpleBiDigraph m)
+newSizedMSimpleBiDigraph szNodes _ = do
   when (szNodes < 0) $ error "Negative size (newSized)"
   nn <- newPrimRef 0
   en <- newPrimRef 0
@@ -58,8 +58,8 @@ newSizedMBiDigraph szNodes _ = do
                        , mgraphSuccs = sref
                        }
 
-instance MGraph MBiDigraph where
-  type ImmutableGraph MBiDigraph = BiDigraph
+instance MGraph MSimpleBiDigraph where
+  type ImmutableGraph MSimpleBiDigraph = SimpleBiDigraph
   getOutEdges g (V src) = do
     nVerts <- readPrimRef (mgraphVertexCount g)
     case src >= nVerts of
@@ -103,7 +103,7 @@ instance MGraph MBiDigraph where
                         , graphSuccs = svec'
                         }
 
-instance MAddVertex MBiDigraph where
+instance MAddVertex MSimpleBiDigraph where
   addVertex g = do
     ensureNodeSpace g
     vid <- readPrimRef r
@@ -116,7 +116,7 @@ instance MAddVertex MBiDigraph where
     where
       r = mgraphVertexCount g
 
-instance MAddEdge MBiDigraph where
+instance MAddEdge MSimpleBiDigraph where
   addEdge g v1@(V src) v2@(V dst) = do
     nVerts <- readPrimRef (mgraphVertexCount g)
     exists <- checkEdgeExists g v1 v2
@@ -136,7 +136,7 @@ instance MAddEdge MBiDigraph where
 
         return $ Just (E eid src dst)
 
-instance MBidirectional MBiDigraph where
+instance MBidirectional MSimpleBiDigraph where
   getPredecessors g (V vid) = do
     nVerts <- readPrimRef (mgraphVertexCount g)
     case vid < nVerts of
@@ -155,8 +155,8 @@ instance MBidirectional MBiDigraph where
         preds <- MV.read pvec vid
         return $ IM.foldrWithKey' (\src eid acc -> E eid src vid : acc) [] preds
 
-instance Graph BiDigraph where
-  type MutableGraph BiDigraph = MBiDigraph
+instance Graph SimpleBiDigraph where
+  type MutableGraph SimpleBiDigraph = MSimpleBiDigraph
   -- FIXME: This will be more complicated if we support removing vertices
   vertices g = map V [0 .. vertexCount g - 1]
   edges g = concatMap (outEdges g) (vertices g)
@@ -185,7 +185,7 @@ instance Graph BiDigraph where
                       }
 
 
-instance Bidirectional BiDigraph  where
+instance Bidirectional SimpleBiDigraph  where
   predecessors g (V v)
     | outOfRange g v = []
     | otherwise = map V $ IM.keys $ V.unsafeIndex (graphPreds g) v
@@ -197,12 +197,12 @@ instance Bidirectional BiDigraph  where
 
 -- Helpers
 
-outOfRange :: BiDigraph -> Int -> Bool
+outOfRange :: SimpleBiDigraph -> Int -> Bool
 outOfRange g = (>= vertexCount g)
 
 -- | Given a graph, ensure that there is space in the vertex vector
 -- for a new vertex.  If there is not, double the capacity.
-ensureNodeSpace :: (PrimMonad m) => MBiDigraph m -> m ()
+ensureNodeSpace :: (PrimMonad m) => MSimpleBiDigraph m -> m ()
 ensureNodeSpace g = do
   pvec <- readPrimRef (mgraphPreds g)
   svec <- readPrimRef (mgraphSuccs g)
