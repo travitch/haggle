@@ -1,6 +1,8 @@
 {-# LANGUAGE TypeFamilies #-}
 -- | This is a simple graph (it does not allow parallel edges).  To support
--- this efficiently, it is less compact than 'Digraph' or 'BiDigraph'.
+-- this efficiently, it is less compact than 'Digraph' or 'BiDigraph'.  As
+-- a consequence, edge existence tests are efficient (logarithmic in the
+-- number of edges leaving the soruce vertex).
 module Data.Graph.Haggle.SimpleBiDigraph (
   MBiDigraph,
   BiDigraph
@@ -26,8 +28,8 @@ data MBiDigraph m = -- See Note [Graph Representation]
              }
 
 data BiDigraph =
-  BiDigraph { vertexCount :: Int
-            , edgeCount :: Int
+  BiDigraph { vertexCount :: {-# UNPACK #-} !Int
+            , edgeCount :: {-# UNPACK #-} !Int
             , graphPreds :: V.Vector (IntMap EdgeID)
             , graphSuccs :: V.Vector (IntMap EdgeID)
             }
@@ -147,11 +149,48 @@ instance MBidirectional MBiDigraph where
 
 instance Graph BiDigraph where
   type MutableGraph BiDigraph m = MBiDigraph m
-  vertices = undefined
-  edges = undefined
-  thaw = undefined
+  -- FIXME: This will be more complicated if we support removing vertices
+  vertices g = map V [0 .. vertexCount g - 1]
+  edges g = concatMap (outEdges g) (vertices g)
+  successors g (V v)
+    | outOfRange g v = []
+    | otherwise = map V $ IM.keys $ V.unsafeIndex (graphSuccs g) v
+  outEdges g (V v)
+    | outOfRange g v = []
+    | otherwise =
+      let succs = V.unsafeIndex (graphSuccs g) v
+      in IM.foldrWithKey' (\dst eid acc -> E eid v dst : acc) [] succs
+  edgeExists g (V src) (V dst)
+    | outOfRange g src || outOfRange g dst = False
+    | otherwise = IM.member dst (V.unsafeIndex (graphSuccs g) src)
+  thaw g = do
+    vc <- newPrimRef (vertexCount g)
+    ec <- newPrimRef (edgeCount g)
+    pvec <- V.thaw (graphPreds g)
+    svec <- V.thaw (graphSuccs g)
+    pref <- newPrimRef pvec
+    sref <- newPrimRef svec
+    return MBiDigraph { mgraphVertexCount = vc
+                      , mgraphEdgeCount = ec
+                      , mgraphPreds = pref
+                      , mgraphSuccs = sref
+                      }
+
+
+instance Bidirectional BiDigraph where
+  predecessors g (V v)
+    | outOfRange g v = []
+    | otherwise = map V $ IM.keys $ V.unsafeIndex (graphPreds g) v
+  inEdges g (V v)
+    | outOfRange g v = []
+    | otherwise =
+      let preds = V.unsafeIndex (graphPreds g) v
+      in IM.foldrWithKey' (\src eid acc -> E eid src v : acc) [] preds
 
 -- Helpers
+
+outOfRange :: BiDigraph -> Int -> Bool
+outOfRange g = (>= vertexCount g)
 
 -- | Given a graph, ensure that there is space in the vertex vector
 -- for a new vertex.  If there is not, double the capacity.
