@@ -133,7 +133,7 @@ instance MGraph MDigraph where
 
 instance Graph Digraph where
   type MutableGraph Digraph m = MDigraph m
-  vertices g = map V $ [0 .. UV.length (edgeRoots g) - 1]
+  vertices g = map V [0 .. UV.length (edgeRoots g) - 1]
   edges g = concatMap (outEdges g) (vertices g)
   successors g (V v)
     | v >= UV.length (edgeRoots g) = []
