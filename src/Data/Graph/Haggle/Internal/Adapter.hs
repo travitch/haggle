@@ -227,15 +227,23 @@ instance (I.Graph g) => I.Graph (LabeledGraph g nl el) where
   edgeExists = edgeExists
   thaw = thaw
 
+edgeLabel :: LabeledGraph g nl el -> I.Edge -> Maybe el
+edgeLabel lg e = edgeLabelStore lg V.!? I.edgeId e
+{-# INLINE edgeLabel #-}
+
 instance I.HasEdgeLabel (LabeledGraph g nl el) where
   type EdgeLabel (LabeledGraph g nl el) = el
-  edgeLabel lg e =
-    edgeLabelStore lg V.!? I.edgeId e
+  edgeLabel = edgeLabel
+
+vertexLabel :: LabeledGraph g nl el -> I.Vertex -> Maybe nl
+vertexLabel lg v = nodeLabelStore lg V.!? I.vertexId v
+{-# INLINE vertexLabel #-}
 
 instance I.HasVertexLabel (LabeledGraph g nl el) where
   type VertexLabel (LabeledGraph g nl el) = nl
-  vertexLabel lg v =
-    nodeLabelStore lg V.!? I.vertexId v
+  vertexLabel = vertexLabel
+
+
 
 -- | Construct a graph from a labeled list of edges.  The node endpoint values
 -- are used as vertex labels, and the last element of the triple is used as an
