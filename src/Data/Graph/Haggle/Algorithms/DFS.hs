@@ -5,12 +5,23 @@ module Data.Graph.Haggle.Algorithms.DFS (
   dfs,
   rdfsWith,
   rdfs,
+  udfsWith,
+  udfs,
   -- * Depth-first Forests
   xdffWith,
   dffWith,
   dff,
   rdffWith,
-  rdff
+  rdff,
+  udffWith,
+  udff,
+  -- * Derived Queries
+  components,
+  noComponents,
+  isConnected,
+  topsort,
+  scc,
+  reachable
   ) where
 
 import Control.Monad ( filterM, foldM, liftM )
@@ -67,6 +78,16 @@ rdfsWith g = xdfsWith g (predecessors g)
 rdfs :: (Bidirectional g) => g -> [Vertex] -> [Vertex]
 rdfs g = rdfsWith g id
 
+udfsWith :: (Bidirectional g)
+         => g
+         -> (Vertex -> c)
+         -> [Vertex]
+         -> [c]
+udfsWith g = xdfsWith g (neighbors g)
+
+udfs :: (Bidirectional g) => g -> [Vertex] -> [Vertex]
+udfs g = udfsWith g id
+
 xdffWith :: (Graph g)
          => g
          -> (Vertex -> [Vertex])
@@ -105,3 +126,47 @@ rdffWith g = xdffWith g (predecessors g)
 
 rdff :: (Bidirectional g) => g -> [Vertex] -> [Tree Vertex]
 rdff g = rdffWith g id
+
+udffWith :: (Bidirectional g) => g -> (Vertex -> c) -> [Vertex] -> [Tree c]
+udffWith g = xdffWith g (neighbors g)
+
+udff :: (Bidirectional g) => g -> [Vertex] -> [Tree Vertex]
+udff g = udffWith g id
+
+-- Derived
+
+components :: (Bidirectional g) => g -> [[Vertex]]
+components g = map preorder $ udff g (vertices g)
+
+noComponents :: (Bidirectional g) => g -> Int
+noComponents = length . components
+
+isConnected :: (Bidirectional g) => g -> Bool
+isConnected = (==1) . noComponents
+
+-- | Topologically sort the graph; the input must be a DAG.
+topsort :: (Graph g) => g -> [Vertex]
+topsort g = reverse $ postflattenF $ dff g (vertices g)
+
+scc :: (Bidirectional g) => g -> [[Vertex]]
+scc g = map preorder (rdff g (topsort g))
+
+reachable :: (Graph g) => Vertex -> g -> [Vertex]
+reachable v g = preorderF (dff g [v])
+
+-- Helpers
+
+neighbors :: (Bidirectional g) => g -> Vertex -> [Vertex]
+neighbors g v = successors g v ++ predecessors g v
+
+preorder :: Tree a -> [a]
+preorder = T.flatten
+
+preorderF :: [Tree a] -> [a]
+preorderF = concatMap preorder
+
+postflatten :: Tree a -> [a]
+postflatten (T.Node v ts) = postflattenF ts ++ [v]
+
+postflattenF :: [Tree a] -> [a]
+postflattenF = concatMap postflatten
