@@ -289,7 +289,7 @@ instance I.HasVertexLabel (LabeledGraph g nl el) where
 -- | Construct a graph from a labeled list of edges.  The node endpoint values
 -- are used as vertex labels, and the last element of the triple is used as an
 -- edge label.
-fromEdgeList :: (Eq a, Ord a, I.Graph g) => [(a, a, b)] -> g
+fromEdgeList :: (Ord a, I.Graph g) => [(a, a, b)] -> g
 fromEdgeList = undefined
 
 -- Helpers
