@@ -31,6 +31,7 @@ library
                    Data.Graph.Haggle.VertexLabelAdapter,
                    Data.Graph.Haggle.EdgeLabelAdapter,
                    Data.Graph.Haggle.Algorithms.DFS,
+                   Data.Graph.Haggle.Algorithms.Dominators,
                    Data.Graph.Haggle.Internal.Basic,
                    Data.Graph.Haggle.Internal.BitSet
   other-modules: Data.Graph.Haggle.Internal.Adapter
