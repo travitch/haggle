@@ -1,13 +1,20 @@
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeFamilies, PatternGuards, RankNTypes #-}
 module Data.Graph.Haggle.VertexLabelAdapter (
   VertexLabeledMGraph,
   VertexLabeledGraph,
   -- * Mutable Graph API
   newVertexLabeledGraph,
   newSizedVertexLabeledGraph,
+  -- * Immutable Graph API
+  fromEdgeList
   ) where
 
+import Control.Monad ( foldM )
 import Control.Monad.Primitive
+import Control.Monad.ST
+import Data.Map ( Map )
+import qualified Data.Map as M
+
 import qualified Data.Graph.Haggle as I
 import qualified Data.Graph.Haggle.Internal.Adapter as A
 
@@ -184,4 +191,52 @@ instance (I.MBidirectional g) => I.MBidirectional (VertexLabeledMGraph g nl) whe
 instance (I.MAddEdge g) => I.MAddEdge (VertexLabeledMGraph g nl) where
   addEdge = addEdge
 
+-- | Build a new (immutable) graph from a list of edges.  Edges are defined
+-- by pairs of /node labels/.  A new 'Vertex' will be allocated for each
+-- node label.
+--
+-- The type of the constructed graph is controlled by the first argument,
+-- which is a constructor for a mutable graph.
+--
+-- Example:
+--
+-- > import Data.Graph.Haggle.VertexLabelAdapter
+-- > import Data.Graph.Haggle.SimpleBiDigraph
+-- >
+-- > let g = fromEdgeList newMSimpleBiDigraph [(0,1), (1,2), (2,3), (3,0)]
+--
+-- An alternative that is fully polymorphic in the return type would be
+-- possible, but it would require type annotations on the result of
+-- 'fromEdgeList', which could be very annoying.
+fromEdgeList :: (I.MGraph g, I.MAddEdge g, I.MAddVertex g, Ord nl)
+             => (forall s . ST s (g (ST s)))
+             -> [(nl, nl)]
+             -> VertexLabeledGraph (I.ImmutableGraph g) nl
+fromEdgeList con es = runST $ do
+  g <- newVertexLabeledGraph con
+  _ <- foldM (fromListAddEdge g) M.empty es
+  I.freeze g
+
+fromListAddEdge :: (PrimMonad m, I.MAddVertex g, I.MAddEdge g, Ord nl)
+                => VertexLabeledMGraph g nl m
+                -> Map nl I.Vertex
+                -> (nl, nl)
+                -> m (Map nl I.Vertex)
+fromListAddEdge g m (src, dst) = do
+  (vsrc, m1) <- getVertex g src m
+  (vdst, m2) <- getVertex g dst m1
+  _ <- addEdge g vsrc vdst
+  return m2
+
+getVertex :: (PrimMonad m, I.MAddVertex g, Ord nl)
+          => VertexLabeledMGraph g nl m
+          -> nl
+          -> Map nl I.Vertex
+          -> m (I.Vertex, Map nl I.Vertex)
+getVertex g lbl m
+  | Just v <- M.lookup lbl m = return (v, m)
+  | otherwise = do
+    v <- addLabeledVertex g lbl
+    let m' = M.insert lbl v m
+    return (v, m')
 
