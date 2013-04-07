@@ -5,6 +5,7 @@ module Data.Graph.Haggle.Algorithms.Dominators (
 
 import Data.Map ( Map )
 import qualified Data.Map as M
+import Data.Maybe ( fromMaybe )
 import Data.Tree ( Tree(..) )
 import qualified Data.Tree as T
 import Data.Vector ( Vector, (!) )
@@ -18,8 +19,8 @@ type FromNode = Map Vertex Int
 type IDom = Vector Int
 type Preds = Vector [Int]
 
-immediateDominators :: (Bidirectional g) => g -> Vertex -> Maybe [(Vertex, Vertex)]
-immediateDominators g root = do
+immediateDominators :: (Bidirectional g) => g -> Vertex -> [(Vertex, Vertex)]
+immediateDominators g root = fromMaybe [] $ do
   (res, toNode, _) <- domWork g root
   return $ tail $ V.toList $ V.imap (\i n -> (toNode!i, toNode!n)) res
 
