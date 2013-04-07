@@ -16,6 +16,7 @@ import qualified Data.Graph.Haggle as HGL
 import qualified Data.Graph.Haggle.VertexLabelAdapter as HGL
 import qualified Data.Graph.Haggle.SimpleBiDigraph as HGL
 import qualified Data.Graph.Haggle.Algorithms.DFS as HGL
+import qualified Data.Graph.Haggle.Algorithms.Dominators as HGL
 
 import Debug.Trace
 debug = flip trace
@@ -61,6 +62,7 @@ tests = [ testProperty "prop_sameVertexCount" prop_sameVertexCount
         , testProperty "prop_sameSuccessorsAtLabel" prop_sameSuccessorsAtLabel
         , testProperty "prop_samePredecessorsAtLabel" prop_samePredecessorsAtLabel
         , testProperty "prop_dfsSame" prop_dfsSame
+        , testProperty "prop_immDominatorsSame" prop_immDominatorsSame
         ]
 
 prop_sameVertexCount :: GraphPair -> Bool
@@ -101,6 +103,17 @@ prop_dfsSame (NID root, GP _ bg tg) =
     bres = map Just $ FGL.dfs [root] bg
     v = vertexFromLabel tg root
     tres = maybe [] (map (HGL.vertexLabel tg) . HGL.dfs tg . (:[])) v
+
+prop_immDominatorsSame :: (NodeId, GraphPair) -> Bool
+prop_immDominatorsSame (NID root, GP _ bg tg) =
+  S.fromList bdoms == S.fromList tdoms
+  where
+    bdoms = FGL.iDom bg root
+    toLabs (v1, v2) =
+      let Just v1l = HGL.vertexLabel tg v1
+          Just v2l = HGL.vertexLabel tg v2
+      in (v1l, v2l)
+    tdoms = maybe [] (map toLabs . HGL.immediateDominators tg) (vertexFromLabel tg root)
 
 -- Helpers
 
