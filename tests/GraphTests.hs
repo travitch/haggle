@@ -15,9 +15,10 @@ import qualified Data.Graph.Inductive as FGL
 import qualified Data.Graph.Haggle as HGL
 import qualified Data.Graph.Haggle.VertexLabelAdapter as HGL
 import qualified Data.Graph.Haggle.SimpleBiDigraph as HGL
+import qualified Data.Graph.Haggle.Algorithms.DFS as HGL
 
--- import Debug.Trace
--- debug = flip trace
+import Debug.Trace
+debug = flip trace
 
 type BaseGraph = FGL.Gr Int ()
 type TestGraph = HGL.VertexLabeledGraph HGL.SimpleBiDigraph Int
@@ -59,6 +60,7 @@ tests = [ testProperty "prop_sameVertexCount" prop_sameVertexCount
         , testProperty "prop_sameEdgeCount" prop_sameEdgeCount
         , testProperty "prop_sameSuccessorsAtLabel" prop_sameSuccessorsAtLabel
         , testProperty "prop_samePredecessorsAtLabel" prop_samePredecessorsAtLabel
+        , testProperty "prop_dfsSame" prop_dfsSame
         ]
 
 prop_sameVertexCount :: GraphPair -> Bool
@@ -86,6 +88,19 @@ prop_samePredecessorsAtLabel (NID nid, GP _ bg tg)
     bss = S.fromList $ fmap Just $ FGL.pre bg nid
     ts = maybe [] (map (HGL.vertexLabel tg) . HGL.predecessors tg) (vertexFromLabel tg nid)
     tss = S.fromList ts
+
+-- Note that this is only checking the *set* of vertices reached.  Unfortunately,
+-- verifying the *order* is difficult because there are many valid DFS orders
+-- (depending on the order edges are stored).  A test using the DFS number
+-- (derived from the depth in the depth-first tree) would be a good complement
+-- to this.
+prop_dfsSame :: (NodeId, GraphPair) -> Bool
+prop_dfsSame (NID root, GP _ bg tg) =
+  S.fromList bres == S.fromList tres
+  where
+    bres = map Just $ FGL.dfs [root] bg
+    v = vertexFromLabel tg root
+    tres = maybe [] (map (HGL.vertexLabel tg) . HGL.dfs tg . (:[])) v
 
 -- Helpers
 
