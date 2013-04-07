@@ -205,6 +205,8 @@ instance (I.MAddEdge g) => I.MAddEdge (VertexLabeledMGraph g nl) where
 -- >
 -- > let g = fromEdgeList newMSimpleBiDigraph [(0,1), (1,2), (2,3), (3,0)]
 --
+-- @g@ has type SimpleBiDigraph.
+--
 -- An alternative that is fully polymorphic in the return type would be
 -- possible, but it would require type annotations on the result of
 -- 'fromEdgeList', which could be very annoying.
