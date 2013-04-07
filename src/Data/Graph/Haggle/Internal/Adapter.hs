@@ -14,6 +14,8 @@ module Data.Graph.Haggle.Internal.Adapter (
   newLabeledGraph,
   newSizedLabeledGraph,
   -- * Immutable graph API
+  mapVertexLabel,
+  mapEdgeLabel,
   fromEdgeList,
   -- * Helpers
   ensureEdgeLabelStorage,
@@ -284,7 +286,11 @@ instance I.HasVertexLabel (LabeledGraph g nl el) where
   type VertexLabel (LabeledGraph g nl el) = nl
   vertexLabel = vertexLabel
 
+mapEdgeLabel :: LabeledGraph g nl el -> (el -> el') -> LabeledGraph g nl el'
+mapEdgeLabel g f = g { edgeLabelStore = V.map f (edgeLabelStore g) }
 
+mapVertexLabel :: LabeledGraph g nl el -> (nl -> nl') -> LabeledGraph g nl' el
+mapVertexLabel g f = g { nodeLabelStore = V.map f (nodeLabelStore g) }
 
 -- | Construct a graph from a labeled list of edges.  The node endpoint values
 -- are used as vertex labels, and the last element of the triple is used as an

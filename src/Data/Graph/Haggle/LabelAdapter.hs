@@ -6,6 +6,8 @@ module Data.Graph.Haggle.LabelAdapter (
   newLabeledGraph,
   newSizedLabeledGraph,
   -- * Immutable Graph API
+  mapEdgeLabel,
+  mapVertexLabel,
   fromEdgeList,
   ) where
 

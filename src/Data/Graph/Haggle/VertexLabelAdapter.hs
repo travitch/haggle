@@ -6,6 +6,7 @@ module Data.Graph.Haggle.VertexLabelAdapter (
   newVertexLabeledGraph,
   newSizedVertexLabeledGraph,
   -- * Immutable Graph API
+  mapVertexLabel,
   fromEdgeList
   ) where
 
@@ -20,6 +21,9 @@ import qualified Data.Graph.Haggle.Internal.Adapter as A
 
 newtype VertexLabeledMGraph g nl m = VLMG { unVLMG :: A.LabeledMGraph g nl () m }
 newtype VertexLabeledGraph g nl = VLG { unVLG :: A.LabeledGraph g nl () }
+
+mapVertexLabel :: VertexLabeledGraph g nl -> (nl -> nl') -> VertexLabeledGraph g nl'
+mapVertexLabel g = VLG . A.mapVertexLabel (unVLG g)
 
 vertices :: (I.Graph g) => VertexLabeledGraph g nl -> [I.Vertex]
 vertices = I.vertices . unVLG

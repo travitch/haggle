@@ -4,6 +4,7 @@ module Data.Graph.Haggle.EdgeLabelAdapter (
   EdgeLabeledGraph,
   newEdgeLabeledGraph,
   newSizedEdgeLabeledGraph,
+  mapEdgeLabel
   ) where
 
 import Control.Monad.Primitive
@@ -12,6 +13,9 @@ import qualified Data.Graph.Haggle.Internal.Adapter as A
 
 newtype EdgeLabeledMGraph g el m = ELMG { unELMG :: A.LabeledMGraph g () el m }
 newtype EdgeLabeledGraph g el = ELG { unELG :: A.LabeledGraph g () el }
+
+mapEdgeLabel :: EdgeLabeledGraph g el -> (el -> el') -> EdgeLabeledGraph g el'
+mapEdgeLabel g = ELG . A.mapEdgeLabel (unELG g)
 
 vertices :: (I.Graph g) => EdgeLabeledGraph g el -> [I.Vertex]
 vertices = I.vertices . unELG
