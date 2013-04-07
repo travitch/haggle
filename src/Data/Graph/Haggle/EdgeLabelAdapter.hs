@@ -16,6 +16,7 @@ newtype EdgeLabeledGraph g el = ELG { unELG :: A.LabeledGraph g () el }
 
 mapEdgeLabel :: EdgeLabeledGraph g el -> (el -> el') -> EdgeLabeledGraph g el'
 mapEdgeLabel g = ELG . A.mapEdgeLabel (unELG g)
+{-# INLINE mapEdgeLabel #-}
 
 vertices :: (I.Graph g) => EdgeLabeledGraph g el -> [I.Vertex]
 vertices = I.vertices . unELG
@@ -71,13 +72,18 @@ instance (I.Bidirectional g) => I.Bidirectional (EdgeLabeledGraph g el) where
   predecessors = predecessors
   inEdges = inEdges
 
-edgeLabel :: EdgeLabeledGraph g el -> I.Edge -> Maybe el
+edgeLabel :: (I.Graph g) => EdgeLabeledGraph g el -> I.Edge -> Maybe el
 edgeLabel (ELG lg) = I.edgeLabel lg
 {-# INLINE edgeLabel #-}
 
-instance I.HasEdgeLabel (EdgeLabeledGraph g el) where
+labeledEdges :: (I.Graph g) => EdgeLabeledGraph g el -> [(I.Edge, el)]
+labeledEdges = I.labeledEdges . unELG
+{-# INLINE labeledEdges #-}
+
+instance (I.Graph g) => I.HasEdgeLabel (EdgeLabeledGraph g el) where
   type EdgeLabel (EdgeLabeledGraph g el) = el
   edgeLabel = edgeLabel
+  labeledEdges = labeledEdges
 
 newEdgeLabeledGraph :: (PrimMonad m, I.MGraph g)
                     => m (g m)

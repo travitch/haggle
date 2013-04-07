@@ -24,6 +24,7 @@ newtype VertexLabeledGraph g nl = VLG { unVLG :: A.LabeledGraph g nl () }
 
 mapVertexLabel :: VertexLabeledGraph g nl -> (nl -> nl') -> VertexLabeledGraph g nl'
 mapVertexLabel g = VLG . A.mapVertexLabel (unVLG g)
+{-# INLINE mapVertexLabel #-}
 
 vertices :: (I.Graph g) => VertexLabeledGraph g nl -> [I.Vertex]
 vertices = I.vertices . unVLG
@@ -79,13 +80,18 @@ instance (I.Bidirectional g) => I.Bidirectional (VertexLabeledGraph g nl) where
   predecessors = predecessors
   inEdges = inEdges
 
-vertexLabel :: VertexLabeledGraph g nl -> I.Vertex -> Maybe nl
+vertexLabel :: (I.Graph g) => VertexLabeledGraph g nl -> I.Vertex -> Maybe nl
 vertexLabel (VLG g) = I.vertexLabel g
 {-# INLINE vertexLabel #-}
 
-instance I.HasVertexLabel (VertexLabeledGraph g nl) where
+instance (I.Graph g) => I.HasVertexLabel (VertexLabeledGraph g nl) where
   type VertexLabel (VertexLabeledGraph g nl) = nl
   vertexLabel = vertexLabel
+  labeledVertices = labeledVertices
+
+labeledVertices :: (I.Graph g) => VertexLabeledGraph g nl -> [(I.Vertex, nl)]
+labeledVertices = I.labeledVertices . unVLG
+{-# INLINE labeledVertices #-}
 
 newVertexLabeledGraph :: (PrimMonad m, I.MGraph g)
                       => m (g m)

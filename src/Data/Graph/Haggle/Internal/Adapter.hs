@@ -274,17 +274,39 @@ edgeLabel :: LabeledGraph g nl el -> I.Edge -> Maybe el
 edgeLabel lg e = edgeLabelStore lg V.!? I.edgeId e
 {-# INLINE edgeLabel #-}
 
-instance I.HasEdgeLabel (LabeledGraph g nl el) where
+instance (I.Graph g) => I.HasEdgeLabel (LabeledGraph g nl el) where
   type EdgeLabel (LabeledGraph g nl el) = el
   edgeLabel = edgeLabel
+  labeledEdges = labeledEdges
 
 vertexLabel :: LabeledGraph g nl el -> I.Vertex -> Maybe nl
 vertexLabel lg v = nodeLabelStore lg V.!? I.vertexId v
 {-# INLINE vertexLabel #-}
 
-instance I.HasVertexLabel (LabeledGraph g nl el) where
+instance (I.Graph g) => I.HasVertexLabel (LabeledGraph g nl el) where
   type VertexLabel (LabeledGraph g nl el) = nl
   vertexLabel = vertexLabel
+  labeledVertices = labeledVertices
+
+-- | Note that we are not just using the @nodeLabelStore@ directly.  In
+-- graphs that support vertex removal, we do not want to include removed
+-- vertices, so we go through the public accessor.  This is slower but easier
+-- to see as correct.
+labeledVertices :: (I.Graph g) => LabeledGraph g nl el -> [(I.Vertex, nl)]
+labeledVertices g = map toLabVert $ I.vertices (rawGraph g)
+  where
+    toLabVert v =
+      let Just lab = vertexLabel g v
+      in (v, lab)
+
+-- | Likewise, we use 'edges' here instead of directly reading from the edge
+-- label storage array.
+labeledEdges :: (I.Graph g) => LabeledGraph g nl el -> [(I.Edge, el)]
+labeledEdges g = map toLabEdge $ I.edges (rawGraph g)
+  where
+    toLabEdge e =
+      let Just lab = edgeLabel g e
+      in (e, lab)
 
 mapEdgeLabel :: LabeledGraph g nl el -> (el -> el') -> LabeledGraph g nl el'
 mapEdgeLabel g f = g { edgeLabelStore = V.map f (edgeLabelStore g) }

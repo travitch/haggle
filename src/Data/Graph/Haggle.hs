@@ -102,12 +102,15 @@ class (Graph g) => Bidirectional g where
   inEdges :: g -> Vertex -> [Edge]
 
 -- | The interface for immutable graphs with labeled edges.
-class HasEdgeLabel g where
+class (Graph g) => HasEdgeLabel g where
   type EdgeLabel g
   edgeLabel :: g -> Edge -> Maybe (EdgeLabel g)
+  labeledEdges :: g -> [(Edge, EdgeLabel g)]
 
 -- | The interface for immutable graphs with labeled vertices.
-class HasVertexLabel g where
+class (Graph g) => HasVertexLabel g where
   type VertexLabel g
   vertexLabel :: g -> Vertex -> Maybe (VertexLabel g)
+  labeledVertices :: g -> [(Vertex, VertexLabel g)]
+
 
