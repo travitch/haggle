@@ -1,11 +1,10 @@
 module Main ( main ) where
 
 import Test.Framework ( defaultMain, testGroup, Test )
--- import Test.Framework.Providers.HUnit
 import Test.Framework.Providers.QuickCheck2 ( testProperty )
--- import Test.HUnit hiding ( Test, test)
 import Test.QuickCheck
 
+import Control.Arrow ( first, second )
 import Control.Monad ( replicateM )
 import qualified Data.Foldable as F
 import Data.Maybe ( isNothing )
@@ -65,6 +64,7 @@ tests = [ testProperty "prop_sameVertexCount" prop_sameVertexCount
         , testProperty "prop_sameComponents" prop_sameComponents
         , testProperty "prop_sameNoComponents" prop_sameNoComponents
         , testProperty "prop_immDominatorsSame" prop_immDominatorsSame
+        , testProperty "prop_dominatorsSame" prop_dominatorsSame
         ]
 
 prop_sameVertexCount :: GraphPair -> Bool
@@ -117,6 +117,15 @@ prop_immDominatorsSame (NID root, GP _ bg tg)
           Just v2l = HGL.vertexLabel tg v2
       in (v1l, v2l)
     tdoms = maybe [] (map toLabs . HGL.immediateDominators tg) (vertexFromLabel tg root)
+
+prop_dominatorsSame :: (NodeId, GraphPair) -> Bool
+prop_dominatorsSame (NID root, GP _ bg tg)
+  | not (FGL.gelem root bg) && isNothing (vertexFromLabel tg root) = True
+  | otherwise = S.fromList (map (first Just) bdoms) == S.fromList (map (first (HGL.vertexLabel tg)) tdoms)
+  where
+    bdoms = map (second (S.fromList . map Just)) $ FGL.dom bg root
+    Just rv = vertexFromLabel tg root
+    tdoms = map (second (S.fromList . map (HGL.vertexLabel tg))) $ HGL.dominators tg rv
 
 prop_sameComponents :: GraphPair -> Bool
 prop_sameComponents (GP _ bg tg) = bcs == tcs

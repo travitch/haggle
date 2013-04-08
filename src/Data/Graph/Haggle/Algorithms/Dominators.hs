@@ -1,6 +1,6 @@
 module Data.Graph.Haggle.Algorithms.Dominators (
   immediateDominators,
---  dominators
+  dominators
   ) where
 
 import Data.Map ( Map )
@@ -25,6 +25,15 @@ immediateDominators :: (Graph g) => g -> Vertex -> [(Vertex, Vertex)]
 immediateDominators g root = fromMaybe [] $ do
   (res, toNode, _) <- domWork g root
   return $ tail $ V.toList $ V.imap (\i n -> (toNode!i, toNode!n)) res
+
+dominators :: (Graph g) => g -> Vertex -> [(Vertex, [Vertex])]
+dominators g root = fromMaybe [] $ do
+  (res, toNode, fromNode) <- domWork g root
+  let dom' = getDom toNode res
+      rest = M.keys (M.filter (-1 ==) fromNode)
+      verts = vertices g
+  return $ [(toNode ! i, dom' ! i) | i <- [0..V.length dom' - 1]] ++
+           [(n, verts) | n <- rest]
 
 domWork :: (Graph g) => g -> Vertex -> Maybe (IDom, ToNode, FromNode)
 domWork g root
@@ -79,6 +88,14 @@ intersect idom a b =
     GT -> intersect idom (idom ! a) b
 
 -- Helpers
+
+getDom :: ToNode -> IDom -> Vector [Vertex]
+getDom toNode idom = res
+  where
+    -- The root dominates itself (the only dominator for the root)
+    root = [toNode ! 0]
+    res = V.fromList $ root : [toNode ! i : res ! (idom ! i) | i <- [1..V.length idom - 1]]
+
 treeEdges :: a -> Tree a -> [(a,a)]
 treeEdges a (Node b ts) = (b,a) : concatMap (treeEdges b) ts
 
