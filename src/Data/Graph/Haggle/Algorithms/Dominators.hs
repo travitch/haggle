@@ -6,6 +6,8 @@ module Data.Graph.Haggle.Algorithms.Dominators (
 import Data.Map ( Map )
 import qualified Data.Map as M
 import Data.Maybe ( fromMaybe )
+import Data.Set ( Set )
+import qualified Data.Set as S
 import Data.Tree ( Tree(..) )
 import qualified Data.Tree as T
 import Data.Vector ( Vector, (!) )
@@ -19,14 +21,12 @@ type FromNode = Map Vertex Int
 type IDom = Vector Int
 type Preds = Vector [Int]
 
-immediateDominators :: (Bidirectional g) => g -> Vertex -> [(Vertex, Vertex)]
+immediateDominators :: (Graph g) => g -> Vertex -> [(Vertex, Vertex)]
 immediateDominators g root = fromMaybe [] $ do
   (res, toNode, _) <- domWork g root
   return $ tail $ V.toList $ V.imap (\i n -> (toNode!i, toNode!n)) res
 
--- FIXME: Use a pre-pass over g to collect predecessors so that we don't need
--- a bidirectional constraint.
-domWork :: (Bidirectional g) => g -> Vertex -> Maybe (IDom, ToNode, FromNode)
+domWork :: (Graph g) => g -> Vertex -> Maybe (IDom, ToNode, FromNode)
 domWork g root
   | null trees = Nothing
   | otherwise = return (idom, toNode, fromNode)
@@ -50,9 +50,23 @@ domWork g root
     -- in the depth-first tree)
     toNodeMap = M.fromList $ zip (T.flatten ntree) (T.flatten tree)
     toNode = V.generate (M.size toNodeMap) (toNodeMap M.!)
-    preds = V.fromList $ [0] : [filter (/= -1) (map (fromNode M.!) (predecessors g (toNode ! i)))
-                         | i <- [1..s-1]]
+
+    -- Use a pre-pass over the graph to collect predecessors so that we don't
+    -- require a Bidirectional graph.  We need a linear pass over the graph
+    -- here anyway, so we don't lose anything.
+    predMap = fmap S.toList $ foldr (toPredecessor g) M.empty (vertices g)
+    preds = V.fromList $ [0] : [filter (/= -1) (map (fromNode M.!) (predMap M.! (toNode ! i)))
+                               | i <- [1..s-1]]
     idom = fixEq (refineIDom preds) idom0
+
+toPredecessor :: (Graph g)
+              => g
+              -> Vertex
+              -> Map Vertex (Set Vertex)
+              -> Map Vertex (Set Vertex)
+toPredecessor g pre m = foldr addPred m (successors g pre)
+  where
+    addPred suc = M.insertWith S.union suc (S.singleton pre)
 
 refineIDom :: Preds -> IDom -> IDom
 refineIDom preds idom = fmap (foldl1 (intersect idom)) preds
