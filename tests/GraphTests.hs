@@ -105,8 +105,9 @@ prop_dfsSame (NID root, GP _ bg tg) =
     tres = maybe [] (map (HGL.vertexLabel tg) . HGL.dfs tg . (:[])) v
 
 prop_immDominatorsSame :: (NodeId, GraphPair) -> Bool
-prop_immDominatorsSame (NID root, GP _ bg tg) =
-  S.fromList bdoms == S.fromList tdoms
+prop_immDominatorsSame (NID root, GP _ bg tg)
+  | not (FGL.gelem root bg) && isNothing (vertexFromLabel tg root) = True
+  | otherwise = S.fromList bdoms == S.fromList tdoms
   where
     bdoms = FGL.iDom bg root
     toLabs (v1, v2) =

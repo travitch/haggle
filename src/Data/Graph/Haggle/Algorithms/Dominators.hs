@@ -24,6 +24,8 @@ immediateDominators g root = fromMaybe [] $ do
   (res, toNode, _) <- domWork g root
   return $ tail $ V.toList $ V.imap (\i n -> (toNode!i, toNode!n)) res
 
+-- FIXME: Use a pre-pass over g to collect predecessors so that we don't need
+-- a bidirectional constraint.
 domWork :: (Bidirectional g) => g -> Vertex -> Maybe (IDom, ToNode, FromNode)
 domWork g root
   | null trees = Nothing
@@ -48,7 +50,7 @@ domWork g root
     -- in the depth-first tree)
     toNodeMap = M.fromList $ zip (T.flatten ntree) (T.flatten tree)
     toNode = V.generate (M.size toNodeMap) (toNodeMap M.!)
-    preds = V.fromList $ [filter (/= -1) (map (fromNode M.!) (predecessors g (toNode ! i)))
+    preds = V.fromList $ [0] : [filter (/= -1) (map (fromNode M.!) (predecessors g (toNode ! i)))
                          | i <- [1..s-1]]
     idom = fixEq (refineIDom preds) idom0
 
