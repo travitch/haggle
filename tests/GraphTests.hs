@@ -62,6 +62,8 @@ tests = [ testProperty "prop_sameVertexCount" prop_sameVertexCount
         , testProperty "prop_sameSuccessorsAtLabel" prop_sameSuccessorsAtLabel
         , testProperty "prop_samePredecessorsAtLabel" prop_samePredecessorsAtLabel
         , testProperty "prop_dfsSame" prop_dfsSame
+        , testProperty "prop_sameComponents" prop_sameComponents
+        , testProperty "prop_sameNoComponents" prop_sameNoComponents
         , testProperty "prop_immDominatorsSame" prop_immDominatorsSame
         ]
 
@@ -115,6 +117,16 @@ prop_immDominatorsSame (NID root, GP _ bg tg)
           Just v2l = HGL.vertexLabel tg v2
       in (v1l, v2l)
     tdoms = maybe [] (map toLabs . HGL.immediateDominators tg) (vertexFromLabel tg root)
+
+prop_sameComponents :: GraphPair -> Bool
+prop_sameComponents (GP _ bg tg) = bcs == tcs
+  where
+    bcs = S.map (S.fromList . map Just) $ S.fromList $ FGL.components bg
+    tcs = S.map (S.fromList . map (HGL.vertexLabel tg)) $ S.fromList $ HGL.components tg
+
+prop_sameNoComponents :: GraphPair -> Bool
+prop_sameNoComponents (GP _ bg tg) =
+  FGL.noComponents bg == HGL.noComponents tg
 
 -- Helpers
 
