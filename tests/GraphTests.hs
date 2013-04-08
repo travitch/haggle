@@ -18,8 +18,8 @@ import qualified Data.Graph.Haggle.SimpleBiDigraph as HGL
 import qualified Data.Graph.Haggle.Algorithms.DFS as HGL
 import qualified Data.Graph.Haggle.Algorithms.Dominators as HGL
 
-import Debug.Trace
-debug = flip trace
+-- import Debug.Trace
+-- debug = flip trace
 
 type BaseGraph = FGL.Gr Int ()
 type TestGraph = HGL.VertexLabeledGraph HGL.SimpleBiDigraph Int
