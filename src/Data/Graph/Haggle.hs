@@ -3,6 +3,8 @@ module Data.Graph.Haggle (
   -- * Basic Types
   Vertex,
   Edge,
+  edgeSource,
+  edgeDest,
   -- * Mutable Graphs
   MGraph(..),
   MAddEdge(..),
