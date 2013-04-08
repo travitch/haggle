@@ -1,3 +1,10 @@
+-- | This module tests Haggle by comparing its results to those of FGL.
+-- This assumes that FGL is reasonably correct.
+--
+-- The arbitrary instance for GraphPair generates a list of edges and
+-- then constructs equivalent FGL and Haggle graphs.  The quickcheck
+-- properties for each operation try to ensure that the two implementations
+-- return the same results.
 module Main ( main ) where
 
 import Test.Framework ( defaultMain, testGroup, Test )

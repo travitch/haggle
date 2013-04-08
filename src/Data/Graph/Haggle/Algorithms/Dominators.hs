@@ -1,3 +1,24 @@
+-- | Compute the dominators in a graph from a root node.
+--
+-- The set of dominators for a 'Vertex' in a graph is always with regard
+-- to a @root@ 'Vertex', given as input to the algorithm.  'Vertex' @d@
+-- dominates 'Vertex' @v@ if every path from the @root@ to @v@ must go
+-- through @d@.  @d@ strictly dominates @v@ if @d@ dominates @v@ and is not
+-- @v@.  The immediate dominator of @v@ is the unique 'Vertex' that strictly
+-- dominates @v@ and does not strictly dominate any other 'Vertex' that
+-- dominates @v@.
+--
+-- This implementation is ported from FGL (<http://hackage.haskell.org/package/fgl>)
+-- and is substantially similar.  The major change is that it uses the vector
+-- library instead of array.
+--
+-- The algorithm is based on \"A Simple, Fast Dominance Algorithm\" by
+-- Cooper, Harvey, and Kennedy
+--
+-- <http://www.cs.rice.edu/~keith/EMBED/dom.pdf>
+--
+-- This is not Tarjan's algorithm; supposedly this is faster in practice
+-- for most graphs.
 module Data.Graph.Haggle.Algorithms.Dominators (
   immediateDominators,
   dominators
@@ -21,11 +42,20 @@ type FromNode = Map Vertex Int
 type IDom = Vector Int
 type Preds = Vector [Int]
 
+-- | Compute the immediate dominators in the graph from the @root@ 'Vertex'.
+-- Each 'Vertex' reachable from the @root@ will be paired with its immediate
+-- dominator.  Note that there is no entry in the result pairing for the
+-- root 'Vertex' because it has no immediate dominator.
+--
+-- If the root vertex is not in the graph, an empty list is returned.
 immediateDominators :: (Graph g) => g -> Vertex -> [(Vertex, Vertex)]
 immediateDominators g root = fromMaybe [] $ do
   (res, toNode, _) <- domWork g root
   return $ tail $ V.toList $ V.imap (\i n -> (toNode!i, toNode!n)) res
 
+-- | Compute all of the dominators for each 'Vertex' reachable from the @root@.
+-- Each reachable 'Vertex' is paired with the list of nodes that dominate it,
+-- including the 'Vertex' itself.  The @root@ is only dominated by itself.
 dominators :: (Graph g) => g -> Vertex -> [(Vertex, [Vertex])]
 dominators g root = fromMaybe [] $ do
   (res, toNode, fromNode) <- domWork g root

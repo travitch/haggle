@@ -1,4 +1,58 @@
 {-# LANGUAGE KindSignatures, TypeFamilies #-}
+-- | Haggle is a Haskell graph library.
+--
+-- The main idea behind haggle is that graphs are constructed with mutation
+-- (either in 'IO' or 'ST').  After the graph is constructed, it is frozen
+-- into an immutable graph.  This split is a major difference between
+-- haggle and the other major Haskell graph library, fgl, which is
+-- formulated in terms of inductive graphs that can always be modified
+-- in a purely-functional way.  Supporting the inductive graph interface
+-- severely limits implementation choices and optimization opportunities, so
+-- haggle tries a different approach.
+--
+-- Furthermore, the types of vertices (nodes in FGL) and edges are held
+-- as abstract in haggle, allowing for changes later if necessary.  That said,
+-- changes are unlikely and the representations are exposed (with no
+-- guarantees) through an Internal module.
+--
+-- Enough talk, example time:
+--
+-- > import Control.Monad ( replicateM )
+-- > import Data.Graph.Haggle
+-- > import Data.Graph.Haggle.Digraph
+-- > import Data.Graph.Haggle.Algorithms.DFS
+-- >
+-- > main :: IO ()
+-- > main = do
+-- >   g <- newMDigraph
+-- >   [v0, v1, v2] <- replicateM 3 (addVertex g)
+-- >   e1 <- addEdge g v0 v1
+-- >   e2 <- addEdge g v1 v2
+-- >   gi <- freeze g
+-- >   print (dfs gi v1) -- [V 1, V 2] since the first vertex is 0
+--
+-- The example builds a graph with three vertices and performs a DFS
+-- from the middle vertex.  Note that the DFS algorithm is implemented on
+-- immutable graphs, so we freeze the mutable graph before traversing it.  The
+-- graph type in this example is a directed graph.
+--
+-- There are other graph variants that support efficient access to predecessor
+-- edges: bidirectional graphs.  There are also simple graph variants that
+-- prohibit parallel edges.
+--
+-- The core graph implementations support only vertices and edges.  /Adapters/
+-- add support for 'Vertex' and 'Edge' labels.  See 'EdgeLabelAdapter',
+-- 'VertexLabelAdapter', and 'LabelAdapter' (which supports both).  This
+-- split allows the core implementations of graphs and graph algorithms to
+-- be fast and compact (since they do not need to allocate storage for or
+-- manipulate labels).  The adapters store labels on the side, similarly
+-- to the property maps of Boost Graph Library.  Also note that the adapters
+-- are strongly typed.  To add edges to a graph with edge labels, you must call
+-- 'addLabeledEdge' instead of 'addEdge'.  Likewise for graphs with vertex
+-- labels and 'addLabeledVertex'/'addVertex'.  This requirement is enforced
+-- in the type system so that labels cannot become out-of-sync with the
+-- structure of the graph.  The adapters each work with any type of underlying
+-- graph.
 module Data.Graph.Haggle (
   -- * Basic Types
   Vertex,

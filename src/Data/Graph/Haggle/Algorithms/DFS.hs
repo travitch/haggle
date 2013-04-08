@@ -1,3 +1,22 @@
+-- | Depth-first search and derived operations.
+--
+-- All of the search variants take a list of 'Vertex' that serves as
+-- roots for the search.
+--
+-- The [x] variants ('xdfsWith' and 'xdffWith') are the most general
+-- and are fully configurable in direction and action.  They take a
+-- \"direction\" function that tells the search what vertices are
+-- next from the current 'Vertex'.  They also take a summarization function
+-- to convert a 'Vertex' into some other value.  This could be 'id' or a
+-- function to extract a label, if supported by your graph type.
+--
+-- The [r] variants are reverse searches, while the [u] variants are
+-- undirected.
+--
+-- A depth-first forest is a collection (list) of depth-first trees.  A
+-- depth-first tree is an n-ary tree rooted at a vertex that contains
+-- the vertices reached in a depth-first search from that root.  The
+-- edges in the tree are a subset of the edges in the graph.
 module Data.Graph.Haggle.Algorithms.DFS (
   -- * Depth-first Searches
   xdfsWith,
@@ -33,6 +52,7 @@ import Data.Graph.Haggle
 import Data.Graph.Haggle.Internal.Basic
 import Data.Graph.Haggle.Internal.BitSet
 
+-- | The most general DFS
 xdfsWith :: (Graph g)
          => g
          -> (Vertex -> [Vertex])
@@ -58,6 +78,7 @@ xdfsWith g nextVerts f roots
 notVisited :: BitSet s -> Vertex -> ST s Bool
 notVisited bs v = liftM not (testBit bs (vertexId v))
 
+-- | Forward parameterized DFS
 dfsWith :: (Graph g)
         => g
         -> (Vertex -> c)
@@ -65,9 +86,11 @@ dfsWith :: (Graph g)
         -> [c]
 dfsWith g = xdfsWith g (successors g)
 
+-- | Forward DFS
 dfs :: (Graph g) => g -> [Vertex] -> [Vertex]
 dfs g = dfsWith g id
 
+-- | Reverse parameterized DFS
 rdfsWith :: (Bidirectional g)
          => g
          -> (Vertex -> c)
@@ -75,9 +98,12 @@ rdfsWith :: (Bidirectional g)
          -> [c]
 rdfsWith g = xdfsWith g (predecessors g)
 
+-- | Reverse DFS
 rdfs :: (Bidirectional g) => g -> [Vertex] -> [Vertex]
 rdfs g = rdfsWith g id
 
+-- | Undirected parameterized DFS.  This variant follows both
+-- incoming and outgoing edges from each 'Vertex'.
 udfsWith :: (Bidirectional g)
          => g
          -> (Vertex -> c)
@@ -85,9 +111,11 @@ udfsWith :: (Bidirectional g)
          -> [c]
 udfsWith g = xdfsWith g (neighbors g)
 
+-- | Undirected DFS
 udfs :: (Bidirectional g) => g -> [Vertex] -> [Vertex]
 udfs g = udfsWith g id
 
+-- | The most general depth-first forest.
 xdffWith :: (Graph g)
          => g
          -> (Vertex -> [Vertex])
@@ -135,12 +163,15 @@ udff g = udffWith g id
 
 -- Derived
 
+-- | Return a list of each connected component in the graph
 components :: (Bidirectional g) => g -> [[Vertex]]
 components g = map preorder $ udff g (vertices g)
 
+-- | The number of components in the graph
 noComponents :: (Bidirectional g) => g -> Int
 noComponents = length . components
 
+-- | True if there is only a single component in the graph.
 isConnected :: (Bidirectional g) => g -> Bool
 isConnected = (==1) . noComponents
 
@@ -148,9 +179,13 @@ isConnected = (==1) . noComponents
 topsort :: (Graph g) => g -> [Vertex]
 topsort g = reverse $ postflattenF $ dff g (vertices g)
 
+-- | Return a list of each /strongly-connected component/ in the graph.
+-- In a strongly-connected component, every vertex is reachable from every
+-- other vertex.
 scc :: (Bidirectional g) => g -> [[Vertex]]
 scc g = map preorder (rdff g (topsort g))
 
+-- | Compute the set of vertices reachable from a root 'Vertex'.
 reachable :: (Graph g) => Vertex -> g -> [Vertex]
 reachable v g = preorderF (dff g [v])
 
