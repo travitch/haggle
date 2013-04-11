@@ -22,16 +22,15 @@ module Data.Graph.Haggle.Internal.Adapter (
   ensureNodeLabelStorage
   ) where
 
-import Control.Monad ( foldM, liftM )
+import Control.Monad ( liftM )
 import Control.Monad.Primitive
 import Control.Monad.ST
-import Data.Map ( Map )
-import qualified Data.Map as M
 import Data.PrimRef
 import Data.Vector ( MVector, Vector )
 import qualified Data.Vector as V
 import qualified Data.Vector.Mutable as MV
 import qualified Data.Graph.Haggle as I
+import qualified Data.Graph.Haggle.VertexMap as VM
 import qualified Data.Graph.Haggle.Internal.Basic as I
 
 -- | An adapter adding support for both vertex and edge labels for mutable
@@ -326,31 +325,20 @@ fromLabeledEdgeList :: (Ord nl, I.MGraph g, I.MAddVertex g, I.MAddEdge g)
                     -> LabeledGraph (I.ImmutableGraph g) nl el
 fromLabeledEdgeList con es = runST $ do
   g <- newLabeledGraph con
-  _ <- foldM (fromListAddEdge g) M.empty es
+  mv <- VM.newVertexMapRef
+  mapM_ (fromListAddEdge g mv) es
   I.freeze g
 
 fromListAddEdge :: (PrimMonad m, I.MAddVertex g, I.MAddEdge g, Ord nl)
                 => LabeledMGraph g nl el m
-                -> Map nl I.Vertex
+                -> VM.VertexMapRef nl m
                 -> (nl, nl, el)
-                -> m (Map nl I.Vertex)
-fromListAddEdge g m (src, dst, lbl) = do
-  (vsrc, m1) <- getVertex g src m
-  (vdst, m2) <- getVertex g dst m1
+                -> m ()
+fromListAddEdge g vm (src, dst, lbl) = do
+  vsrc <- VM.vertexForLabelRef g vm src
+  vdst <- VM.vertexForLabelRef g vm dst
   _ <- addLabeledEdge g vsrc vdst lbl
-  return m2
-
-getVertex :: (PrimMonad m, I.MAddVertex g, Ord nl)
-          => LabeledMGraph g nl el m
-          -> nl
-          -> Map nl I.Vertex
-          -> m (I.Vertex, Map nl I.Vertex)
-getVertex g lbl m
-  | Just v <- M.lookup lbl m = return (v, m)
-  | otherwise = do
-    v <- addLabeledVertex g lbl
-    let m' = M.insert lbl v m
-    return (v, m')
+  return ()
 
 -- Helpers
 

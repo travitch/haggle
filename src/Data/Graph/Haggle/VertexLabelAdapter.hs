@@ -15,13 +15,11 @@ module Data.Graph.Haggle.VertexLabelAdapter (
   fromEdgeList
   ) where
 
-import Control.Monad ( foldM )
 import Control.Monad.Primitive
 import Control.Monad.ST
-import Data.Map ( Map )
-import qualified Data.Map as M
 
 import qualified Data.Graph.Haggle as I
+import qualified Data.Graph.Haggle.VertexMap as VM
 import qualified Data.Graph.Haggle.Internal.Adapter as A
 
 newtype VertexLabeledMGraph g nl m = VLMG { unVLMG :: A.LabeledMGraph g nl () m }
@@ -231,29 +229,19 @@ fromEdgeList :: (I.MGraph g, I.MAddEdge g, I.MAddVertex g, Ord nl)
              -> VertexLabeledGraph (I.ImmutableGraph g) nl
 fromEdgeList con es = runST $ do
   g <- newVertexLabeledGraph con
-  _ <- foldM (fromListAddEdge g) M.empty es
+  vm <- VM.newVertexMapRef
+  mapM_ (fromListAddEdge g vm) es
   I.freeze g
 
 fromListAddEdge :: (PrimMonad m, I.MAddVertex g, I.MAddEdge g, Ord nl)
                 => VertexLabeledMGraph g nl m
-                -> Map nl I.Vertex
+                -> VM.VertexMapRef nl m
                 -> (nl, nl)
-                -> m (Map nl I.Vertex)
-fromListAddEdge g m (src, dst) = do
-  (vsrc, m1) <- getVertex g src m
-  (vdst, m2) <- getVertex g dst m1
+                -> m ()
+fromListAddEdge g vm (src, dst) = do
+  vsrc <- VM.vertexForLabelRef g vm src
+  vdst <- VM.vertexForLabelRef g vm dst
   _ <- addEdge g vsrc vdst
-  return m2
+  return ()
 
-getVertex :: (PrimMonad m, I.MAddVertex g, Ord nl)
-          => VertexLabeledMGraph g nl m
-          -> nl
-          -> Map nl I.Vertex
-          -> m (I.Vertex, Map nl I.Vertex)
-getVertex g lbl m
-  | Just v <- M.lookup lbl m = return (v, m)
-  | otherwise = do
-    v <- addLabeledVertex g lbl
-    let m' = M.insert lbl v m
-    return (v, m')
 
