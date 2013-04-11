@@ -226,12 +226,14 @@ instance (I.MAddEdge g) => I.MAddEdge (VertexLabeledMGraph g nl) where
 fromEdgeList :: (I.MGraph g, I.MAddEdge g, I.MAddVertex g, Ord nl)
              => (forall s . ST s (g (ST s)))
              -> [(nl, nl)]
-             -> VertexLabeledGraph (I.ImmutableGraph g) nl
+             -> (VertexLabeledGraph (I.ImmutableGraph g) nl, VM.VertexMap nl)
 fromEdgeList con es = runST $ do
   g <- newVertexLabeledGraph con
   vm <- VM.newVertexMapRef
   mapM_ (fromListAddEdge g vm) es
-  I.freeze g
+  g' <- I.freeze g
+  vm' <- VM.vertexMapFromRef vm
+  return (g', vm')
 
 fromListAddEdge :: (PrimMonad m, I.MAddVertex g, I.MAddEdge g, Ord nl)
                 => VertexLabeledMGraph g nl m

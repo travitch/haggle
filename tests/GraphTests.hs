@@ -56,7 +56,7 @@ mkGraphPair sz = do
       nids = unique (srcs ++ dsts)
       ns = zip nids nids
       bg = FGL.mkGraph ns (map (\(s, d) -> (s, d, ())) edges)
-      tg = HGL.fromEdgeList HGL.newMSimpleBiDigraph edges
+      (tg, _) = HGL.fromEdgeList HGL.newMSimpleBiDigraph edges
   return $! GP edges bg tg
 
 main :: IO ()

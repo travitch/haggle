@@ -322,12 +322,14 @@ mapVertexLabel g f = g { nodeLabelStore = V.map f (nodeLabelStore g) }
 fromLabeledEdgeList :: (Ord nl, I.MGraph g, I.MAddVertex g, I.MAddEdge g)
                     => (forall s . ST s (g (ST s)))
                     -> [(nl, nl, el)]
-                    -> LabeledGraph (I.ImmutableGraph g) nl el
+                    -> (LabeledGraph (I.ImmutableGraph g) nl el, VM.VertexMap nl)
 fromLabeledEdgeList con es = runST $ do
   g <- newLabeledGraph con
-  mv <- VM.newVertexMapRef
-  mapM_ (fromListAddEdge g mv) es
-  I.freeze g
+  vm <- VM.newVertexMapRef
+  mapM_ (fromListAddEdge g vm) es
+  g' <- I.freeze g
+  vm' <- VM.vertexMapFromRef vm
+  return (g', vm')
 
 fromListAddEdge :: (PrimMonad m, I.MAddVertex g, I.MAddEdge g, Ord nl)
                 => LabeledMGraph g nl el m
