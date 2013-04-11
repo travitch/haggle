@@ -8,7 +8,7 @@ module Data.Graph.Haggle.LabelAdapter (
   -- * Immutable Graph API
   mapEdgeLabel,
   mapVertexLabel,
-  fromEdgeList,
+  fromLabeledEdgeList,
   ) where
 
 import Data.Graph.Haggle.Internal.Adapter

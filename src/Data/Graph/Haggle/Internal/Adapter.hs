@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeFamilies, PatternGuards, RankNTypes #-}
 -- | This internal module implements code shared between all of the
 -- adapter interfaces.  The adapters add support for vertex and edge
 -- labels without modifications to the underlying graph.  Any graph
@@ -16,14 +16,17 @@ module Data.Graph.Haggle.Internal.Adapter (
   -- * Immutable graph API
   mapVertexLabel,
   mapEdgeLabel,
-  fromEdgeList,
+  fromLabeledEdgeList,
   -- * Helpers
   ensureEdgeLabelStorage,
   ensureNodeLabelStorage
   ) where
 
-import Control.Monad ( liftM )
+import Control.Monad ( foldM, liftM )
 import Control.Monad.Primitive
+import Control.Monad.ST
+import Data.Map ( Map )
+import qualified Data.Map as M
 import Data.PrimRef
 import Data.Vector ( MVector, Vector )
 import qualified Data.Vector as V
@@ -317,8 +320,37 @@ mapVertexLabel g f = g { nodeLabelStore = V.map f (nodeLabelStore g) }
 -- | Construct a graph from a labeled list of edges.  The node endpoint values
 -- are used as vertex labels, and the last element of the triple is used as an
 -- edge label.
-fromEdgeList :: (Ord a, I.Graph g) => [(a, a, b)] -> g
-fromEdgeList = undefined
+fromLabeledEdgeList :: (Ord nl, I.MGraph g, I.MAddVertex g, I.MAddEdge g)
+                    => (forall s . ST s (g (ST s)))
+                    -> [(nl, nl, el)]
+                    -> LabeledGraph (I.ImmutableGraph g) nl el
+fromLabeledEdgeList con es = runST $ do
+  g <- newLabeledGraph con
+  _ <- foldM (fromListAddEdge g) M.empty es
+  I.freeze g
+
+fromListAddEdge :: (PrimMonad m, I.MAddVertex g, I.MAddEdge g, Ord nl)
+                => LabeledMGraph g nl el m
+                -> Map nl I.Vertex
+                -> (nl, nl, el)
+                -> m (Map nl I.Vertex)
+fromListAddEdge g m (src, dst, lbl) = do
+  (vsrc, m1) <- getVertex g src m
+  (vdst, m2) <- getVertex g dst m1
+  _ <- addLabeledEdge g vsrc vdst lbl
+  return m2
+
+getVertex :: (PrimMonad m, I.MAddVertex g, Ord nl)
+          => LabeledMGraph g nl el m
+          -> nl
+          -> Map nl I.Vertex
+          -> m (I.Vertex, Map nl I.Vertex)
+getVertex g lbl m
+  | Just v <- M.lookup lbl m = return (v, m)
+  | otherwise = do
+    v <- addLabeledVertex g lbl
+    let m' = M.insert lbl v m
+    return (v, m')
 
 -- Helpers
 
