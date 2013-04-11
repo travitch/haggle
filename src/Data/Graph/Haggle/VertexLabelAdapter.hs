@@ -1,4 +1,9 @@
 {-# LANGUAGE TypeFamilies, PatternGuards, RankNTypes #-}
+-- | An adapter to create graphs with labeled vertices and unlabeled edges.
+--
+-- See 'LabeledGraph' for an overview.  The only significant difference
+-- is that this graph only supports adding unlabeled edges, and thus you
+-- must use 'addEdge' instead of 'addLabeledEdge'.
 module Data.Graph.Haggle.VertexLabelAdapter (
   VertexLabeledMGraph,
   VertexLabeledGraph,

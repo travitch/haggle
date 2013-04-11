@@ -1,4 +1,8 @@
 {-# LANGUAGE TypeFamilies #-}
+-- | This adapter adds edge labels (but not vertex labels) to graphs.
+--
+-- It only supports 'addLabeledEdge', not 'addEdge'.  See 'LabeledGraph'
+-- for more details.
 module Data.Graph.Haggle.EdgeLabelAdapter (
   EdgeLabeledMGraph,
   EdgeLabeledGraph,
