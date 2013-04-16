@@ -21,20 +21,20 @@ import qualified Data.Vector as V
 import Data.Graph.Haggle
 import Data.Graph.Haggle.Internal.Basic
 
-type EdgeID = Int
+-- type EdgeID = Int
 
 data MSimpleBiDigraph m = -- See Note [Graph Representation]
   MBiDigraph { mgraphVertexCount :: PrimRef m Int
              , mgraphEdgeCount :: PrimRef m Int
-             , mgraphPreds :: PrimRef m (MV.MVector (PrimState m) (IntMap EdgeID))
-             , mgraphSuccs :: PrimRef m (MV.MVector (PrimState m) (IntMap EdgeID))
+             , mgraphPreds :: PrimRef m (MV.MVector (PrimState m) (IntMap Edge))
+             , mgraphSuccs :: PrimRef m (MV.MVector (PrimState m) (IntMap Edge))
              }
 
 data SimpleBiDigraph =
   BiDigraph { vertexCount :: {-# UNPACK #-} !Int
             , edgeCount :: {-# UNPACK #-} !Int
-            , graphPreds :: V.Vector (IntMap EdgeID)
-            , graphSuccs :: V.Vector (IntMap EdgeID)
+            , graphPreds :: V.Vector (IntMap Edge)
+            , graphSuccs :: V.Vector (IntMap Edge)
             }
 
 defaultSize :: Int
@@ -63,6 +63,7 @@ instance MGraph MSimpleBiDigraph where
   getVertices g = do
     nVerts <- readPrimRef (mgraphVertexCount g)
     return [V v | v <- [0..nVerts - 1]]
+
   getOutEdges g (V src) = do
     nVerts <- readPrimRef (mgraphVertexCount g)
     case src >= nVerts of
@@ -70,7 +71,8 @@ instance MGraph MSimpleBiDigraph where
       False -> do
         svec <- readPrimRef (mgraphSuccs g)
         succs <- MV.read svec src
-        return $ IM.foldrWithKey' (\dst eid acc -> E eid src dst : acc) [] succs
+        return $ IM.elems succs
+--        return $ IM.foldrWithKey (\dst eid acc -> E eid src dst : acc) [] succs
 
   countVertices = readPrimRef . mgraphVertexCount
   countEdges = readPrimRef . mgraphEdgeCount
@@ -127,17 +129,18 @@ instance MAddEdge MSimpleBiDigraph where
       True -> return Nothing
       False -> do
         eid <- readPrimRef (mgraphEdgeCount g)
+        let e = E eid src dst
         modifyPrimRef' (mgraphEdgeCount g) (+1)
 
         pvec <- readPrimRef (mgraphPreds g)
         preds <- MV.read pvec dst
-        MV.write pvec dst (IM.insert src eid preds)
+        MV.write pvec dst (IM.insert src e preds)
 
         svec <- readPrimRef (mgraphSuccs g)
         succs <- MV.read svec src
-        MV.write svec src (IM.insert dst eid succs)
+        MV.write svec src (IM.insert dst e succs)
 
-        return $ Just (E eid src dst)
+        return $ Just e
 
 instance MBidirectional MSimpleBiDigraph where
   getPredecessors g (V vid) = do
@@ -156,7 +159,8 @@ instance MBidirectional MSimpleBiDigraph where
       True -> do
         pvec <- readPrimRef (mgraphPreds g)
         preds <- MV.read pvec vid
-        return $ IM.foldrWithKey' (\src eid acc -> E eid src vid : acc) [] preds
+        return $ IM.elems preds
+ --       return $ IM.foldrWithKey' (\src eid acc -> E eid src vid : acc) [] preds
 
 instance Graph SimpleBiDigraph where
   type MutableGraph SimpleBiDigraph = MSimpleBiDigraph
@@ -170,7 +174,8 @@ instance Graph SimpleBiDigraph where
     | outOfRange g v = []
     | otherwise =
       let succs = V.unsafeIndex (graphSuccs g) v
-      in IM.foldrWithKey' (\dst eid acc -> E eid v dst : acc) [] succs
+      in IM.elems succs
+--      in IM.foldrWithKey' (\dst eid acc -> E eid v dst : acc) [] succs
   edgeExists g (V src) (V dst)
     | outOfRange g src || outOfRange g dst = False
     | otherwise = IM.member dst (V.unsafeIndex (graphSuccs g) src)
@@ -198,7 +203,8 @@ instance Bidirectional SimpleBiDigraph  where
     | outOfRange g v = []
     | otherwise =
       let preds = V.unsafeIndex (graphPreds g) v
-      in IM.foldrWithKey' (\src eid acc -> E eid src v : acc) [] preds
+      in IM.elems preds
+      -- in IM.foldrWithKey' (\src eid acc -> E eid src v : acc) [] preds
 
 -- Helpers
 
