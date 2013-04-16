@@ -150,6 +150,10 @@ countEdges :: (PrimMonad m, I.MGraph g) => LabeledMGraph g nl el m -> m Int
 countEdges = I.countEdges . rawMGraph
 {-# INLINE countEdges #-}
 
+getVertices :: (PrimMonad m, I.MGraph g) => LabeledMGraph g nl el m -> m [I.Vertex]
+getVertices = I.getVertices . rawMGraph
+{-# INLINE getVertices #-}
+
 getPredecessors :: (PrimMonad m, I.MBidirectional g)
                 => LabeledMGraph g nl el m -> I.Vertex -> m [I.Vertex]
 getPredecessors lg = I.getPredecessors (rawMGraph lg)
@@ -186,6 +190,7 @@ freeze lg = do
 
 instance (I.MGraph g) => I.MGraph (LabeledMGraph g nl el) where
   type ImmutableGraph (LabeledMGraph g nl el) = LabeledGraph (I.ImmutableGraph g) nl el
+  getVertices = getVertices
   getSuccessors = getSuccessors
   getOutEdges = getOutEdges
   countEdges = countEdges

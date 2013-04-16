@@ -60,6 +60,9 @@ newSizedMSimpleBiDigraph szNodes _ = do
 
 instance MGraph MSimpleBiDigraph where
   type ImmutableGraph MSimpleBiDigraph = SimpleBiDigraph
+  getVertices g = do
+    nVerts <- readPrimRef (mgraphVertexCount g)
+    return [V v | v <- [0..nVerts - 1]]
   getOutEdges g (V src) = do
     nVerts <- readPrimRef (mgraphVertexCount g)
     case src >= nVerts of

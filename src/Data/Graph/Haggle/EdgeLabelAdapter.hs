@@ -145,6 +145,10 @@ countVertices :: (PrimMonad m, I.MGraph g) => EdgeLabeledMGraph g el m -> m Int
 countVertices = I.countVertices . unELMG
 {-# INLINE countVertices #-}
 
+getVertices :: (PrimMonad m, I.MGraph g) => EdgeLabeledMGraph g el m -> m [I.Vertex]
+getVertices = I.getVertices . unELMG
+{-# INLINE getVertices #-}
+
 countEdges :: (PrimMonad m, I.MGraph g) => EdgeLabeledMGraph g el m -> m Int
 countEdges = I.countEdges . unELMG
 {-# INLINE countEdges #-}
@@ -178,6 +182,7 @@ freeze lg = do
 instance (I.MGraph g) => I.MGraph (EdgeLabeledMGraph g el) where
   type ImmutableGraph (EdgeLabeledMGraph g el) =
     EdgeLabeledGraph (I.ImmutableGraph g) el
+  getVertices = getVertices
   getSuccessors = getSuccessors
   getOutEdges = getOutEdges
   countVertices = countVertices

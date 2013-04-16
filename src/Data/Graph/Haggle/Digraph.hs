@@ -79,6 +79,10 @@ newSizedMDigraph szNodes szEdges = do
 
 instance MGraph MDigraph where
   type ImmutableGraph MDigraph = Digraph
+  getVertices g = do
+    nVerts <- readPrimRef (graphVertexCount g)
+    return [V v | v <- [0..nVerts-1]]
+
   getOutEdges g (V src) = do
     nVerts <- readPrimRef (graphVertexCount g)
     case src >= nVerts of
