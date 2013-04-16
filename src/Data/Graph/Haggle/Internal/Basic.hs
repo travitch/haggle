@@ -12,6 +12,8 @@ module Data.Graph.Haggle.Internal.Basic (
   edgeDest
   ) where
 
+import Data.Hashable
+
 -- | An abstract representation of a vertex.
 --
 -- Note that the representation is currently exposed.  Do not rely on
@@ -19,9 +21,23 @@ module Data.Graph.Haggle.Internal.Basic (
 newtype Vertex = V Int
   deriving (Eq, Ord, Show)
 
+instance Hashable Vertex where
+  hashWithSalt = hashVertex
+
+hashVertex :: Int -> Vertex -> Int
+hashVertex s (V i) = hashWithSalt s i
+{-# INLINE hashVertex #-}
+
 -- | An edge between two vertices.
 data Edge = E {-# UNPACK #-}!Int {-# UNPACK #-}!Int {-# UNPACK #-}!Int
   deriving (Eq, Ord, Show)
+
+instance Hashable Edge where
+  hashWithSalt = hashEdge
+
+hashEdge :: Int -> Edge -> Int
+hashEdge s (E eid src dst) = s `hashWithSalt` eid `hashWithSalt` src `hashWithSalt` dst
+{-# INLINE hashEdge #-}
 
 vertexId :: Vertex -> Int
 vertexId (V vid) = vid
