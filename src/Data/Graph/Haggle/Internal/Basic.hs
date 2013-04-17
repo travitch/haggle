@@ -29,7 +29,8 @@ hashVertex s (V i) = hashWithSalt s i
 {-# INLINE hashVertex #-}
 
 -- | An edge between two vertices.
-data Edge = E {-# UNPACK #-}!Int {-# UNPACK #-}!Int {-# UNPACK #-}!Int
+-- data Edge = E {-# UNPACK #-}!Int {-# UNPACK #-}!Int {-# UNPACK #-}!Int
+data Edge = E Int Int Int
   deriving (Eq, Ord, Show)
 
 instance Hashable Edge where

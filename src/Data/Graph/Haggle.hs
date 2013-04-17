@@ -122,6 +122,15 @@ class (MGraph g) => MAddEdge (g :: (* -> *) -> *) where
 class (MGraph g) => MLabeledEdge (g :: (* -> *) -> *) where
   type MEdgeLabel g
   getEdgeLabel :: (PrimMonad m) => g m -> Edge -> m (Maybe (MEdgeLabel g))
+  getEdgeLabel g e = do
+    nEs <- countEdges g
+    case edgeId e >= nEs of
+      True -> return Nothing
+      False -> unsafeGetEdgeLabel g e
+  unsafeGetEdgeLabel :: (PrimMonad m) => g m -> Edge -> m (MEdgeLabel g)
+  unsafeGetEdgeLabel g e = do
+    Just l <- getEdgeLabel g e
+    return l
   addLabeledEdge :: (PrimMonad m) => g m -> Vertex -> Vertex -> MEdgeLabel g -> m (Maybe Edge)
 
 class (MGraph g) => MLabeledVertex (g :: (* -> *) -> *) where

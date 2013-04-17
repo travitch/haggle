@@ -89,18 +89,32 @@ addLabeledVertex lg nl = do
   nlVec <- readPrimRef (nodeLabelStorage lg)
   MV.write nlVec (I.vertexId v) nl
   return v
+--
+-- getEdgeLabel :: (PrimMonad m, I.MGraph g)
+--              => LabeledMGraph g nl el m
+--              -> I.Edge
+--              -> m (Maybe el)
+-- getEdgeLabel lg e = do
+--   nEs <- I.countEdges (rawMGraph lg)
+--   case I.edgeId e >= nEs of
+--     True -> return Nothing
+--     False -> do
+--       elVec <- readPrimRef (edgeLabelStorage lg)
+--       Just `liftM` MV.read elVec (I.edgeId e)
 
-getEdgeLabel :: (PrimMonad m, I.MGraph g)
-             => LabeledMGraph g nl el m
-             -> I.Edge
-             -> m (Maybe el)
-getEdgeLabel lg e = do
-  nEs <- I.countEdges (rawMGraph lg)
-  case I.edgeId e >= nEs of
-    True -> return Nothing
-    False -> do
-      elVec <- readPrimRef (edgeLabelStorage lg)
-      Just `liftM` MV.read elVec (I.edgeId e)
+-- FIXME: Just implement this one and push the safe version to have the default
+-- impl
+unsafeGetEdgeLabel :: (PrimMonad m, I.MGraph g)
+                   => LabeledMGraph g nl el m
+                   -> I.Edge
+                   -> m el
+unsafeGetEdgeLabel lg e = do
+  let stor = {-# SCC "unsafeRead.edgeLabelStorage" #-} edgeLabelStorage lg
+      eid = {-# SCC "unsafeRead.eid" #-} I.edgeId e
+  elVec <- {-# SCC "readPrimRef" #-} readPrimRef stor
+  l <- {-# SCC "unsafeRead.read" #-} MV.unsafeRead elVec eid
+  return l
+{-# INLINE unsafeGetEdgeLabel #-}
 
 getVertexLabel :: (PrimMonad m, I.MGraph g)
                => LabeledMGraph g nl el m
@@ -204,7 +218,8 @@ instance (I.MBidirectional g) => I.MBidirectional (LabeledMGraph g nl el) where
 
 instance (I.MAddEdge g) => I.MLabeledEdge (LabeledMGraph g nl el) where
   type MEdgeLabel (LabeledMGraph g nl el) = el
-  getEdgeLabel = getEdgeLabel
+  -- getEdgeLabel = getEdgeLabel
+  unsafeGetEdgeLabel = unsafeGetEdgeLabel
   addLabeledEdge = addLabeledEdge
 
 instance (I.MAddVertex g) => I.MLabeledVertex (LabeledMGraph g nl el) where
