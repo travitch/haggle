@@ -11,8 +11,8 @@ module Data.Graph.Haggle.SimpleBiDigraph (
   ) where
 
 import Control.Monad ( when )
-import Control.Monad.Primitive
-import Data.PrimRef
+import Control.Monad.ST
+import Data.STRef
 import Data.IntMap ( IntMap )
 import qualified Data.IntMap as IM
 import qualified Data.Vector.Mutable as MV
@@ -23,11 +23,11 @@ import Data.Graph.Haggle.Internal.Basic
 
 -- type EdgeID = Int
 
-data MSimpleBiDigraph m = -- See Note [Graph Representation]
-  MBiDigraph { mgraphVertexCount :: PrimRef m Int
-             , mgraphEdgeCount :: PrimRef m Int
-             , mgraphPreds :: PrimRef m (MV.MVector (PrimState m) (IntMap Edge))
-             , mgraphSuccs :: PrimRef m (MV.MVector (PrimState m) (IntMap Edge))
+data MSimpleBiDigraph s = -- See Note [Graph Representation]
+  MBiDigraph { mgraphVertexCount :: STRef s Int
+             , mgraphEdgeCount :: STRef s Int
+             , mgraphPreds :: STRef s (MV.STVector s (IntMap Edge))
+             , mgraphSuccs :: STRef s (MV.STVector s (IntMap Edge))
              }
 
 data SimpleBiDigraph =
@@ -40,18 +40,18 @@ data SimpleBiDigraph =
 defaultSize :: Int
 defaultSize = 128
 
-newMSimpleBiDigraph :: (PrimMonad m) => m (MSimpleBiDigraph m)
+newMSimpleBiDigraph :: ST s (MSimpleBiDigraph s)
 newMSimpleBiDigraph = newSizedMSimpleBiDigraph defaultSize 0
 
-newSizedMSimpleBiDigraph :: (PrimMonad m) => Int -> Int -> m (MSimpleBiDigraph m)
+newSizedMSimpleBiDigraph :: Int -> Int -> ST s (MSimpleBiDigraph s)
 newSizedMSimpleBiDigraph szNodes _ = do
   when (szNodes < 0) $ error "Negative size (newSized)"
-  nn <- newPrimRef 0
-  en <- newPrimRef 0
+  nn <- newSTRef 0
+  en <- newSTRef 0
   pvec <- MV.new szNodes
   svec <- MV.new szNodes
-  pref <- newPrimRef pvec
-  sref <- newPrimRef svec
+  pref <- newSTRef pvec
+  sref <- newSTRef svec
   return $! MBiDigraph { mgraphVertexCount = nn
                        , mgraphEdgeCount = en
                        , mgraphPreds = pref
@@ -61,45 +61,45 @@ newSizedMSimpleBiDigraph szNodes _ = do
 instance MGraph MSimpleBiDigraph where
   type ImmutableGraph MSimpleBiDigraph = SimpleBiDigraph
   getVertices g = do
-    nVerts <- readPrimRef (mgraphVertexCount g)
+    nVerts <- readSTRef (mgraphVertexCount g)
     return [V v | v <- [0..nVerts - 1]]
 
   getOutEdges g (V src) = do
-    nVerts <- readPrimRef (mgraphVertexCount g)
+    nVerts <- readSTRef (mgraphVertexCount g)
     case src >= nVerts of
       True -> return []
       False -> do
-        svec <- readPrimRef (mgraphSuccs g)
-        succs <- MV.read svec src
+        svec <- readSTRef (mgraphSuccs g)
+        succs <- MV.unsafeRead svec src
         return $ IM.elems succs
 --        return $ IM.foldrWithKey (\dst eid acc -> E eid src dst : acc) [] succs
 
-  countVertices = readPrimRef . mgraphVertexCount
-  countEdges = readPrimRef . mgraphEdgeCount
+  countVertices = readSTRef . mgraphVertexCount
+  countEdges = readSTRef . mgraphEdgeCount
 
   getSuccessors g (V src) = do
-    nVerts <- readPrimRef (mgraphVertexCount g)
+    nVerts <- readSTRef (mgraphVertexCount g)
     case src >= nVerts of
       True -> return []
       False -> do
-        svec <- readPrimRef (mgraphSuccs g)
-        succs <- MV.read svec src
+        svec <- readSTRef (mgraphSuccs g)
+        succs <- MV.unsafeRead svec src
         return $ map V $ IM.keys succs
 
   checkEdgeExists g (V src) (V dst) = do
-    nVerts <- readPrimRef (mgraphVertexCount g)
+    nVerts <- readSTRef (mgraphVertexCount g)
     case src >= nVerts || dst >= nVerts of
       True -> return False
       False -> do
-        svec <- readPrimRef (mgraphSuccs g)
-        succs <- MV.read svec src
+        svec <- readSTRef (mgraphSuccs g)
+        succs <- MV.unsafeRead svec src
         return $ IM.member dst succs
 
   freeze g = do
-    nVerts <- readPrimRef (mgraphVertexCount g)
-    nEdges <- readPrimRef (mgraphEdgeCount g)
-    pvec <- readPrimRef (mgraphPreds g)
-    svec <- readPrimRef (mgraphSuccs g)
+    nVerts <- readSTRef (mgraphVertexCount g)
+    nEdges <- readSTRef (mgraphEdgeCount g)
+    pvec <- readSTRef (mgraphPreds g)
+    svec <- readSTRef (mgraphSuccs g)
     pvec' <- V.freeze (MV.take nVerts pvec)
     svec' <- V.freeze (MV.take nVerts svec)
     return $! BiDigraph { vertexCount = nVerts
@@ -111,10 +111,10 @@ instance MGraph MSimpleBiDigraph where
 instance MAddVertex MSimpleBiDigraph where
   addVertex g = do
     ensureNodeSpace g
-    vid <- readPrimRef r
-    modifyPrimRef' r (+1)
-    pvec <- readPrimRef (mgraphPreds g)
-    svec <- readPrimRef (mgraphSuccs g)
+    vid <- readSTRef r
+    modifySTRef' r (+1)
+    pvec <- readSTRef (mgraphPreds g)
+    svec <- readSTRef (mgraphSuccs g)
     MV.write pvec vid IM.empty
     MV.write svec vid IM.empty
     return (V vid)
@@ -123,42 +123,42 @@ instance MAddVertex MSimpleBiDigraph where
 
 instance MAddEdge MSimpleBiDigraph where
   addEdge g v1@(V src) v2@(V dst) = do
-    nVerts <- readPrimRef (mgraphVertexCount g)
+    nVerts <- readSTRef (mgraphVertexCount g)
     exists <- checkEdgeExists g v1 v2
     case exists || src >= nVerts || dst >= nVerts of
       True -> return Nothing
       False -> do
-        eid <- readPrimRef (mgraphEdgeCount g)
+        eid <- readSTRef (mgraphEdgeCount g)
         let e = E eid src dst
-        modifyPrimRef' (mgraphEdgeCount g) (+1)
+        modifySTRef' (mgraphEdgeCount g) (+1)
 
-        pvec <- readPrimRef (mgraphPreds g)
-        preds <- MV.read pvec dst
-        MV.write pvec dst (IM.insert src e preds)
+        pvec <- readSTRef (mgraphPreds g)
+        preds <- MV.unsafeRead pvec dst
+        MV.unsafeWrite pvec dst (IM.insert src e preds)
 
-        svec <- readPrimRef (mgraphSuccs g)
-        succs <- MV.read svec src
-        MV.write svec src (IM.insert dst e succs)
+        svec <- readSTRef (mgraphSuccs g)
+        succs <- MV.unsafeRead svec src
+        MV.unsafeWrite svec src (IM.insert dst e succs)
 
         return $ Just e
 
 instance MBidirectional MSimpleBiDigraph where
   getPredecessors g (V vid) = do
-    nVerts <- readPrimRef (mgraphVertexCount g)
+    nVerts <- readSTRef (mgraphVertexCount g)
     case vid < nVerts of
       False -> return []
       True -> do
-        pvec <- readPrimRef (mgraphPreds g)
-        preds <- MV.read pvec vid
+        pvec <- readSTRef (mgraphPreds g)
+        preds <- MV.unsafeRead pvec vid
         return $ map V $ IM.keys preds
 
   getInEdges g (V vid) = do
-    nVerts <- readPrimRef (mgraphVertexCount g)
+    nVerts <- readSTRef (mgraphVertexCount g)
     case vid < nVerts of
       False -> return []
       True -> do
-        pvec <- readPrimRef (mgraphPreds g)
-        preds <- MV.read pvec vid
+        pvec <- readSTRef (mgraphPreds g)
+        preds <- MV.unsafeRead pvec vid
         return $ IM.elems preds
  --       return $ IM.foldrWithKey' (\src eid acc -> E eid src vid : acc) [] preds
 
@@ -182,12 +182,12 @@ instance Graph SimpleBiDigraph where
   maxVertexId g = V.length (graphSuccs g) - 1
   isEmpty = (==0) . vertexCount
   thaw g = do
-    vc <- newPrimRef (vertexCount g)
-    ec <- newPrimRef (edgeCount g)
+    vc <- newSTRef (vertexCount g)
+    ec <- newSTRef (edgeCount g)
     pvec <- V.thaw (graphPreds g)
     svec <- V.thaw (graphSuccs g)
-    pref <- newPrimRef pvec
-    sref <- newPrimRef svec
+    pref <- newSTRef pvec
+    sref <- newSTRef svec
     return MBiDigraph { mgraphVertexCount = vc
                       , mgraphEdgeCount = ec
                       , mgraphPreds = pref
@@ -213,19 +213,19 @@ outOfRange g = (>= vertexCount g)
 
 -- | Given a graph, ensure that there is space in the vertex vector
 -- for a new vertex.  If there is not, double the capacity.
-ensureNodeSpace :: (PrimMonad m) => MSimpleBiDigraph m -> m ()
+ensureNodeSpace :: MSimpleBiDigraph s -> ST s ()
 ensureNodeSpace g = do
-  pvec <- readPrimRef (mgraphPreds g)
-  svec <- readPrimRef (mgraphSuccs g)
+  pvec <- readSTRef (mgraphPreds g)
+  svec <- readSTRef (mgraphSuccs g)
   let cap = MV.length pvec
-  cnt <- readPrimRef (mgraphVertexCount g)
+  cnt <- readSTRef (mgraphVertexCount g)
   case cnt < cap of
     True -> return ()
     False -> do
       pvec' <- MV.grow pvec cap
       svec' <- MV.grow svec cap
-      writePrimRef (mgraphPreds g) pvec'
-      writePrimRef (mgraphSuccs g) svec'
+      writeSTRef (mgraphPreds g) pvec'
+      writeSTRef (mgraphSuccs g) svec'
 
 
 {- Note [Graph Representation]

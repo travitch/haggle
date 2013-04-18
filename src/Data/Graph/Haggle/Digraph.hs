@@ -21,8 +21,8 @@ module Data.Graph.Haggle.Digraph (
   ) where
 
 import Control.Monad ( when )
-import Control.Monad.Primitive
-import Data.PrimRef
+import Control.Monad.ST
+import Data.STRef
 
 import qualified Data.Vector.Unboxed.Mutable as MUV
 import qualified Data.Vector.Unboxed as UV
@@ -31,12 +31,12 @@ import Data.Graph.Haggle
 import Data.Graph.Haggle.Internal.Basic
 
 -- | This is a compact (mutable) directed graph.
-data MDigraph m = -- See Note [Graph Representation]
-  MDigraph { graphVertexCount :: PrimRef m Int
-           , graphEdgeRoots :: PrimRef m (MUV.MVector (PrimState m) Int)
-           , graphEdgeCount :: PrimRef m Int
-           , graphEdgeTarget :: PrimRef m (MUV.MVector (PrimState m) Int)
-           , graphEdgeNext :: PrimRef m (MUV.MVector (PrimState m) Int)
+data MDigraph s = -- See Note [Graph Representation]
+  MDigraph { graphVertexCount :: STRef s Int
+           , graphEdgeRoots :: STRef s (MUV.STVector s Int)
+           , graphEdgeCount :: STRef s Int
+           , graphEdgeTarget :: STRef s (MUV.STVector s Int)
+           , graphEdgeNext :: STRef s (MUV.STVector s Int)
            }
 
 data Digraph =
@@ -50,24 +50,24 @@ defaultSize = 128
 
 -- | Create a new empty mutable graph with a small amount of storage
 -- reserved for vertices and edges.
-newMDigraph :: (PrimMonad m) => m (MDigraph m)
+newMDigraph :: ST s (MDigraph s)
 newMDigraph = newSizedMDigraph defaultSize defaultSize
 
 -- | Create a new empty graph with storage reserved for @szVerts@ vertices
 -- and @szEdges@ edges.
 --
 -- > g <- newSizedMDigraph szVerts szEdges
-newSizedMDigraph :: (PrimMonad m) => Int -> Int -> m (MDigraph m)
+newSizedMDigraph :: Int -> Int -> ST s (MDigraph s)
 newSizedMDigraph szNodes szEdges = do
   when (szNodes < 0 || szEdges < 0) $ error "Negative size (newSized)"
-  nn <- newPrimRef 0
-  en <- newPrimRef 0
+  nn <- newSTRef 0
+  en <- newSTRef 0
   nVec <- MUV.new szNodes
-  nVecRef <- newPrimRef nVec
+  nVecRef <- newSTRef nVec
   eTarget <- MUV.new szEdges
-  eTargetRef <- newPrimRef eTarget
+  eTargetRef <- newSTRef eTarget
   eNext <- MUV.new szEdges
-  eNextRef <- newPrimRef eNext
+  eNextRef <- newSTRef eNext
   return $! MDigraph { graphVertexCount = nn
                    , graphEdgeRoots = nVecRef
                    , graphEdgeCount = en
@@ -80,31 +80,31 @@ newSizedMDigraph szNodes szEdges = do
 instance MGraph MDigraph where
   type ImmutableGraph MDigraph = Digraph
   getVertices g = do
-    nVerts <- readPrimRef (graphVertexCount g)
+    nVerts <- readSTRef (graphVertexCount g)
     return [V v | v <- [0..nVerts-1]]
 
   getOutEdges g (V src) = do
-    nVerts <- readPrimRef (graphVertexCount g)
+    nVerts <- readSTRef (graphVertexCount g)
     case src >= nVerts of
       True -> return []
       False -> do
-        roots <- readPrimRef (graphEdgeRoots g)
-        lstRoot <- MUV.read roots src
+        roots <- readSTRef (graphEdgeRoots g)
+        lstRoot <- MUV.unsafeRead roots src
         findEdges g src lstRoot
 
-  countVertices = readPrimRef . graphVertexCount
-  countEdges = readPrimRef . graphEdgeCount
+  countVertices = readSTRef . graphVertexCount
+  countEdges = readSTRef . graphEdgeCount
 
   getSuccessors g src = do
     es <- getOutEdges g src
-    return $ map (\(E _ _ dst) -> V dst) es
+    return $ map edgeDest es
 
   freeze g = do
-    nVerts <- readPrimRef (graphVertexCount g)
-    nEdges <- readPrimRef (graphEdgeCount g)
-    roots <- readPrimRef (graphEdgeRoots g)
-    targets <- readPrimRef (graphEdgeTarget g)
-    nexts <- readPrimRef (graphEdgeNext g)
+    nVerts <- readSTRef (graphVertexCount g)
+    nEdges <- readSTRef (graphEdgeCount g)
+    roots <- readSTRef (graphEdgeRoots g)
+    targets <- readSTRef (graphEdgeTarget g)
+    nexts <- readSTRef (graphEdgeNext g)
     roots' <- UV.freeze (MUV.take nVerts roots)
     targets' <- UV.freeze (MUV.take nEdges targets)
     nexts' <- UV.freeze (MUV.take nEdges nexts)
@@ -116,35 +116,35 @@ instance MGraph MDigraph where
 instance MAddVertex MDigraph where
   addVertex g = do
     ensureNodeSpace g
-    vid <- readPrimRef r
-    modifyPrimRef' r (+1)
-    vec <- readPrimRef (graphEdgeRoots g)
-    MUV.write vec vid (-1)
+    vid <- readSTRef r
+    modifySTRef' r (+1)
+    vec <- readSTRef (graphEdgeRoots g)
+    MUV.unsafeWrite vec vid (-1)
     return (V vid)
     where
       r = graphVertexCount g
 
 instance MAddEdge MDigraph where
   addEdge g (V src) (V dst) = do
-    nVerts <- readPrimRef (graphVertexCount g)
+    nVerts <- readSTRef (graphVertexCount g)
     case src >= nVerts || dst >= nVerts of
       True -> return Nothing
       False -> do
         ensureEdgeSpace g
-        eid <- readPrimRef (graphEdgeCount g)
-        modifyPrimRef' (graphEdgeCount g) (+1)
-        rootVec <- readPrimRef (graphEdgeRoots g)
+        eid <- readSTRef (graphEdgeCount g)
+        modifySTRef' (graphEdgeCount g) (+1)
+        rootVec <- readSTRef (graphEdgeRoots g)
         -- The current list of edges for src
-        curListHead <- MUV.read rootVec src
+        curListHead <- MUV.unsafeRead rootVec src
 
         -- Now create the new edge
-        nextVec <- readPrimRef (graphEdgeNext g)
-        targetVec <- readPrimRef (graphEdgeTarget g)
-        MUV.write nextVec eid curListHead
-        MUV.write targetVec eid dst
+        nextVec <- readSTRef (graphEdgeNext g)
+        targetVec <- readSTRef (graphEdgeTarget g)
+        MUV.unsafeWrite nextVec eid curListHead
+        MUV.unsafeWrite targetVec eid dst
 
         -- The list now starts at our new edge
-        MUV.write rootVec src eid
+        MUV.unsafeWrite rootVec src eid
         return $ Just (E eid src dst)
 
 
@@ -168,14 +168,14 @@ instance Graph Digraph where
   maxVertexId g = UV.length (edgeRoots g) - 1
   isEmpty = (==0) . UV.length . edgeRoots
   thaw g = do
-    vc <- newPrimRef (UV.length (edgeRoots g))
-    ec <- newPrimRef (UV.length (edgeTargets g))
+    vc <- newSTRef (UV.length (edgeRoots g))
+    ec <- newSTRef (UV.length (edgeTargets g))
     rvec <- UV.thaw (edgeRoots g)
     tvec <- UV.thaw (edgeTargets g)
     nvec <- UV.thaw (edgeNexts g)
-    rref <- newPrimRef rvec
-    tref <- newPrimRef tvec
-    nref <- newPrimRef nvec
+    rref <- newSTRef rvec
+    tref <- newSTRef tvec
+    nref <- newSTRef nvec
     return MDigraph { graphVertexCount = vc
                     , graphEdgeCount = ec
                     , graphEdgeRoots = rref
@@ -204,46 +204,46 @@ pureSuccessors g ix = V s : pureSuccessors g nxt
 
 -- | Given the root of a successor list, traverse it and
 -- accumulate all edges, stopping at -1.
-findEdges :: (PrimMonad m) => MDigraph m -> Int -> Int -> m [Edge]
+findEdges :: MDigraph s -> Int -> Int -> ST s [Edge]
 findEdges _ _ (-1) = return []
 findEdges g src root = do
-  targets <- readPrimRef (graphEdgeTarget g)
-  nexts <- readPrimRef (graphEdgeNext g)
+  targets <- readSTRef (graphEdgeTarget g)
+  nexts <- readSTRef (graphEdgeNext g)
   let go acc (-1) = return acc
       go acc ix = do
-        tgt <- MUV.read targets ix
-        nxt <- MUV.read nexts ix
+        tgt <- MUV.unsafeRead targets ix
+        nxt <- MUV.unsafeRead nexts ix
         go (E ix src tgt : acc) nxt
   go [] root
 
 -- | Given a graph, ensure that there is space in the vertex vector
 -- for a new vertex.  If there is not, double the capacity.
-ensureNodeSpace :: (PrimMonad m) => MDigraph m -> m ()
+ensureNodeSpace :: MDigraph s -> ST s ()
 ensureNodeSpace g = do
-  vec <- readPrimRef (graphEdgeRoots g)
+  vec <- readSTRef (graphEdgeRoots g)
   let cap = MUV.length vec
-  cnt <- readPrimRef (graphVertexCount g)
+  cnt <- readSTRef (graphVertexCount g)
   case cnt < cap of
     True -> return ()
     False -> do
       vec' <- MUV.grow vec cap
-      writePrimRef (graphEdgeRoots g) vec'
+      writeSTRef (graphEdgeRoots g) vec'
 
 -- | Ensure that the graph has space for another edge.  If there is not,
 -- double the edge capacity.
-ensureEdgeSpace :: (PrimMonad m) => MDigraph m -> m ()
+ensureEdgeSpace :: MDigraph s -> ST s ()
 ensureEdgeSpace g = do
-  v1 <- readPrimRef (graphEdgeTarget g)
-  v2 <- readPrimRef (graphEdgeNext g)
-  nEdges <- readPrimRef (graphEdgeCount g)
+  v1 <- readSTRef (graphEdgeTarget g)
+  v2 <- readSTRef (graphEdgeNext g)
+  nEdges <- readSTRef (graphEdgeCount g)
   let cap = MUV.length v1
   case nEdges < cap of
     True -> return ()
     False -> do
       v1' <- MUV.grow v1 cap
       v2' <- MUV.grow v2 cap
-      writePrimRef (graphEdgeTarget g) v1'
-      writePrimRef (graphEdgeNext g) v2'
+      writeSTRef (graphEdgeTarget g) v1'
+      writeSTRef (graphEdgeNext g) v2'
 
 {- Note [Graph Representation]
 
