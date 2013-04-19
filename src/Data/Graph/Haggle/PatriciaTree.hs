@@ -3,7 +3,7 @@
 -- big-endian patricia-tries -- IntMap).
 --
 -- This formulation does not support parallel edges.
-module Data.Graph.Haggle.PatriciaTree ( Gr ) where
+module Data.Graph.Haggle.PatriciaTree ( PatriciaTree ) where
 
 import Control.Monad ( guard )
 import Data.IntMap ( IntMap )
@@ -15,9 +15,9 @@ import qualified Data.Graph.Haggle as I
 import qualified Data.Graph.Haggle.Internal.Basic as I
 
 data Ctx nl el = Ctx !(IntMap el) I.Vertex nl !(IntMap el)
-data Gr nl el = Gr { graphRepr :: IntMap (Ctx nl el) }
+data PatriciaTree nl el = Gr { graphRepr :: IntMap (Ctx nl el) }
 
-instance I.Graph (Gr nl el) where
+instance I.Graph (PatriciaTree nl el) where
   vertices = map I.V . IM.keys . graphRepr
   isEmpty = IM.null . graphRepr
   maxVertexId = fst . IM.findMax . graphRepr
@@ -34,8 +34,8 @@ instance I.Graph (Gr nl el) where
     where
       toEdge d = I.E (-1) v d
 
-instance I.HasEdgeLabel (Gr nl el) where
-  type EdgeLabel (Gr nl el) = el
+instance I.HasEdgeLabel (PatriciaTree nl el) where
+  type EdgeLabel (PatriciaTree nl el) = el
   edgeLabel (Gr g) (I.E _ src dst) = do
     Ctx _ _ _ ss <- IM.lookup src g
     IM.lookup dst ss
@@ -50,8 +50,8 @@ instance I.HasEdgeLabel (Gr nl el) where
     where
       toOut d lbl acc = (I.E (-1) s d, lbl) : acc
 
-instance I.HasVertexLabel (Gr nl el) where
-  type VertexLabel (Gr nl el) = nl
+instance I.HasVertexLabel (PatriciaTree nl el) where
+  type VertexLabel (PatriciaTree nl el) = nl
   vertexLabel (Gr g) (I.V v) = do
     Ctx _ _ lbl _ <- IM.lookup v g
     return lbl
@@ -61,7 +61,7 @@ instance I.HasVertexLabel (Gr nl el) where
         let Just l = I.vertexLabel gr v
         in (v, l)
 
-instance I.Bidirectional (Gr nl el) where
+instance I.Bidirectional (PatriciaTree nl el) where
   predecessors (Gr g) (I.V v) = fromMaybe [] $ do
     Ctx pp _ _ _ <- IM.lookup v g
     return $ map I.V (IM.keys pp)
@@ -71,14 +71,14 @@ instance I.Bidirectional (Gr nl el) where
     where
       toEdge s = I.E (-1) s v
 
-instance I.BidirectionalEdgeLabel (Gr nl el) where
+instance I.BidirectionalEdgeLabel (PatriciaTree nl el) where
   labeledInEdges (Gr g) (I.V d) = fromMaybe [] $ do
     Ctx pp _ _ _ <- IM.lookup d g
     return $ IM.foldrWithKey toIn [] pp
     where
       toIn s lbl acc = (I.E (-1) s d, lbl) : acc
 
-instance I.InductiveGraph (Gr nl el) where
+instance I.InductiveGraph (PatriciaTree nl el) where
   emptyGraph = Gr IM.empty
   insertLabeledVertex gr@(Gr g) lab =
     let vid = I.maxVertexId gr + 1

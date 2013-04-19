@@ -200,8 +200,16 @@ class (Graph g) => HasVertexLabel g where
 data Context g = Context [(EdgeLabel g, Vertex)] (VertexLabel g) [(EdgeLabel g, Vertex)]
 
 class (Graph g, HasEdgeLabel g, HasVertexLabel g) => InductiveGraph g where
+  -- | The empty inductive graph
   emptyGraph :: g
+  -- | The call
+  --
+  -- > let (c, g') = match g v
+  --
+  -- decomposes the graph into the 'Context' c of @v@ and the rest of
+  -- the graph @g'@.
   match :: g -> Vertex -> Maybe (Context g, g)
+  -- | Insert a new labeled 'Vertex' into the graph.
   insertLabeledVertex :: g -> VertexLabel g -> (Vertex, g)
   -- | Must return 'Nothing' if either the source or destination 'Vertex' is not
   -- in the graph.  Also returns 'Nothing' if the edge already exists and the
@@ -209,7 +217,10 @@ class (Graph g, HasEdgeLabel g, HasVertexLabel g) => InductiveGraph g where
   --
   -- Otherwise return the inserted 'Edge' and updated graph.
   insertLabeledEdge :: g -> Vertex -> Vertex -> EdgeLabel g -> Maybe (Edge, g)
+  -- | Delete the given 'Edge'.  In a multigraph, this lets you remove
+  -- a single parallel edge between two vertices.
   deleteEdge :: g -> Edge -> g
+  -- | Delete all edges between a pair of vertices.
   deleteEdgesBetween :: g -> Vertex -> Vertex -> g
 
   -- | Like 'insertLabeledEdge', but overwrite any existing edges.  Equivalent
@@ -222,6 +233,7 @@ class (Graph g, HasEdgeLabel g, HasVertexLabel g) => InductiveGraph g where
     let g' = deleteEdgesBetween g src dst
     in insertLabeledEdge g' src dst lbl
 
+  -- | Remove a 'Vertex' from the graph
   deleteVertex :: g -> Vertex -> g
   deleteVertex g v = fromMaybe g $ do
     (_, g') <- match g v
