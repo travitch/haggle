@@ -73,6 +73,7 @@ module Data.Graph.Haggle (
   Bidirectional(..),
   HasEdgeLabel(..),
   HasVertexLabel(..),
+  BidirectionalEdgeLabel(..),
   -- * Inductive Graphs
   InductiveGraph(..),
   Context(..)
@@ -80,6 +81,7 @@ module Data.Graph.Haggle (
 
 import Control.Monad ( forM, liftM )
 import Control.Monad.ST
+import Data.Maybe ( fromMaybe )
 import Data.Graph.Haggle.Internal.Basic
 
 -- | The interface supported by a mutable graph.
@@ -184,6 +186,10 @@ class (Graph g) => HasEdgeLabel g where
   type EdgeLabel g
   edgeLabel :: g -> Edge -> Maybe (EdgeLabel g)
   labeledEdges :: g -> [(Edge, EdgeLabel g)]
+  labeledOutEdges :: g -> Vertex -> [(Edge, EdgeLabel g)]
+
+class (HasEdgeLabel g, Bidirectional g) => BidirectionalEdgeLabel g where
+  labeledInEdges :: g -> Vertex -> [(Edge, EdgeLabel g)]
 
 -- | The interface for immutable graphs with labeled vertices.
 class (Graph g) => HasVertexLabel g where
@@ -194,9 +200,30 @@ class (Graph g) => HasVertexLabel g where
 data Context g = Context [(EdgeLabel g, Vertex)] (VertexLabel g) [(EdgeLabel g, Vertex)]
 
 class (Graph g, HasEdgeLabel g, HasVertexLabel g) => InductiveGraph g where
-  match :: g -> Vertex -> (Context g, g)
+  emptyGraph :: g
+  match :: g -> Vertex -> Maybe (Context g, g)
   insertLabeledVertex :: g -> VertexLabel g -> (Vertex, g)
-  insertLabeledEdge :: g -> Vertex -> Vertex -> EdgeLabel g -> (Edge, g)
+  -- | Must return 'Nothing' if either the source or destination 'Vertex' is not
+  -- in the graph.  Also returns 'Nothing' if the edge already exists and the
+  -- underlying graph does not support parallel edges.
+  --
+  -- Otherwise return the inserted 'Edge' and updated graph.
+  insertLabeledEdge :: g -> Vertex -> Vertex -> EdgeLabel g -> Maybe (Edge, g)
   deleteEdge :: g -> Edge -> g
   deleteEdgesBetween :: g -> Vertex -> Vertex -> g
+
+  -- | Like 'insertLabeledEdge', but overwrite any existing edges.  Equivalent
+  -- to:
+  --
+  -- > let g' = deleteEdgesBetween g v1 v2
+  -- > in insertLabeledEdge g v1 v2 lbl
+  replaceLabeledEdge :: g -> Vertex -> Vertex -> EdgeLabel g -> Maybe (Edge, g)
+  replaceLabeledEdge g src dst lbl =
+    let g' = deleteEdgesBetween g src dst
+    in insertLabeledEdge g' src dst lbl
+
+  deleteVertex :: g -> Vertex -> g
+  deleteVertex g v = fromMaybe g $ do
+    (_, g') <- match g v
+    return g'
 

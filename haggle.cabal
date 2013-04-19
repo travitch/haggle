@@ -29,6 +29,7 @@ library
   exposed-modules: Data.Graph.Haggle,
                    Data.Graph.Haggle.Digraph,
                    Data.Graph.Haggle.SimpleBiDigraph,
+                   Data.Graph.Haggle.PatriciaTree,
                    Data.Graph.Haggle.LabelAdapter,
                    Data.Graph.Haggle.VertexLabelAdapter,
                    Data.Graph.Haggle.EdgeLabelAdapter,
