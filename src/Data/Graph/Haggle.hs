@@ -161,7 +161,6 @@ class (MGraph g) => MBidirectional g where
 
 -- | The basic interface of immutable graphs.
 class Graph g where
-  type MutableGraph g
   vertices :: g -> [Vertex]
   edges :: g -> [Edge]
   successors :: g -> Vertex -> [Vertex]
@@ -169,6 +168,9 @@ class Graph g where
   edgeExists :: g -> Vertex -> Vertex -> Bool
   maxVertexId :: g -> Int
   isEmpty :: g -> Bool
+
+class (Graph g) => Thawable g where
+  type MutableGraph g
   thaw :: g -> ST s (MutableGraph g s)
 
 -- | The interface for immutable graphs with efficient access to
@@ -189,4 +191,12 @@ class (Graph g) => HasVertexLabel g where
   vertexLabel :: g -> Vertex -> Maybe (VertexLabel g)
   labeledVertices :: g -> [(Vertex, VertexLabel g)]
 
+data Context g = Context [(EdgeLabel g, Vertex)] (VertexLabel g) [(EdgeLabel g, Vertex)]
+
+class (Graph g, HasEdgeLabel g, HasVertexLabel g) => InductiveGraph g where
+  match :: g -> Vertex -> (Context g, g)
+  insertLabeledVertex :: g -> VertexLabel g -> (Vertex, g)
+  insertLabeledEdge :: g -> Vertex -> Vertex -> EdgeLabel g -> (Edge, g)
+  deleteEdge :: g -> Edge -> g
+  deleteEdgesBetween :: g -> Vertex -> Vertex -> g
 

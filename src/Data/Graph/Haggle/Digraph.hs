@@ -147,26 +147,8 @@ instance MAddEdge MDigraph where
         MUV.unsafeWrite rootVec src eid
         return $ Just (E eid src dst)
 
-
-
-
-instance Graph Digraph where
+instance Thawable Digraph where
   type MutableGraph Digraph = MDigraph
-  vertices g = map V [0 .. UV.length (edgeRoots g) - 1]
-  edges g = concatMap (outEdges g) (vertices g)
-  successors g (V v)
-    | outOfRange g v = []
-    | otherwise =
-      let root = UV.unsafeIndex (edgeRoots g) v
-      in pureSuccessors g root
-  outEdges g (V v)
-    | outOfRange g v = []
-    | otherwise =
-      let root = UV.unsafeIndex (edgeRoots g) v
-      in pureEdges g v root
-  edgeExists g v1 v2 = any (==v2) $ successors g v1
-  maxVertexId g = UV.length (edgeRoots g) - 1
-  isEmpty = (==0) . UV.length . edgeRoots
   thaw g = do
     vc <- newSTRef (UV.length (edgeRoots g))
     ec <- newSTRef (UV.length (edgeTargets g))
@@ -182,6 +164,24 @@ instance Graph Digraph where
                     , graphEdgeTarget = tref
                     , graphEdgeNext = nref
                     }
+
+
+instance Graph Digraph where
+  vertices g = map V [0 .. UV.length (edgeRoots g) - 1]
+  edges g = concatMap (outEdges g) (vertices g)
+  successors g (V v)
+    | outOfRange g v = []
+    | otherwise =
+      let root = UV.unsafeIndex (edgeRoots g) v
+      in pureSuccessors g root
+  outEdges g (V v)
+    | outOfRange g v = []
+    | otherwise =
+      let root = UV.unsafeIndex (edgeRoots g) v
+      in pureEdges g v root
+  edgeExists g v1 v2 = any (==v2) $ successors g v1
+  maxVertexId g = UV.length (edgeRoots g) - 1
+  isEmpty = (==0) . UV.length . edgeRoots
 
 -- Helpers
 

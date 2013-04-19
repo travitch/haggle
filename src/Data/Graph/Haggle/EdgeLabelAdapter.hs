@@ -51,8 +51,6 @@ isEmpty = I.isEmpty . unELG
 {-# INLINE isEmpty #-}
 
 instance (I.Graph g) => I.Graph (EdgeLabeledGraph g el) where
-  type MutableGraph (EdgeLabeledGraph g el) =
-    EdgeLabeledMGraph (I.MutableGraph g) el
   vertices = vertices
   edges = edges
   successors = successors
@@ -60,9 +58,14 @@ instance (I.Graph g) => I.Graph (EdgeLabeledGraph g el) where
   edgeExists = edgeExists
   maxVertexId = maxVertexId
   isEmpty = isEmpty
+
+instance (I.Thawable g) => I.Thawable (EdgeLabeledGraph g el) where
+  type MutableGraph (EdgeLabeledGraph g el) =
+    EdgeLabeledMGraph (I.MutableGraph g) el
   thaw (ELG lg) = do
     g' <- I.thaw lg
     return $ ELMG g'
+
 
 predecessors :: (I.Bidirectional g) => EdgeLabeledGraph g el -> I.Vertex -> [I.Vertex]
 predecessors (ELG lg) = I.predecessors lg
@@ -200,6 +203,6 @@ instance (I.MAddVertex g) => I.MAddVertex (EdgeLabeledMGraph g el) where
 
 instance (I.MAddEdge g) => I.MLabeledEdge (EdgeLabeledMGraph g el) where
   type MEdgeLabel (EdgeLabeledMGraph g el) = el
-  getEdgeLabel = getEdgeLabel
+  unsafeGetEdgeLabel = unsafeGetEdgeLabel
   addLabeledEdge = addLabeledEdge
 

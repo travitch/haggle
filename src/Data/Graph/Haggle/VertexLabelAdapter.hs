@@ -57,8 +57,6 @@ isEmpty = I.isEmpty . unVLG
 {-# INLINE isEmpty #-}
 
 instance (I.Graph g) => I.Graph (VertexLabeledGraph g nl) where
-  type MutableGraph (VertexLabeledGraph g nl) =
-    VertexLabeledMGraph (I.MutableGraph g) nl
   vertices = vertices
   edges = edges
   successors = successors
@@ -66,9 +64,14 @@ instance (I.Graph g) => I.Graph (VertexLabeledGraph g nl) where
   edgeExists = edgeExists
   maxVertexId = maxVertexId
   isEmpty = isEmpty
+
+instance (I.Thawable g) => I.Thawable (VertexLabeledGraph g nl) where
+  type MutableGraph (VertexLabeledGraph g nl) =
+    VertexLabeledMGraph (I.MutableGraph g) nl
   thaw (VLG lg) = do
     g' <- I.thaw lg
     return $ VLMG g'
+
 
 predecessors :: (I.Bidirectional g) => VertexLabeledGraph g nl -> I.Vertex -> [I.Vertex]
 predecessors (VLG lg) = I.predecessors lg

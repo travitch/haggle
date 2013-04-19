@@ -160,27 +160,9 @@ instance MBidirectional MSimpleBiDigraph where
         pvec <- readSTRef (mgraphPreds g)
         preds <- MV.unsafeRead pvec vid
         return $ IM.elems preds
- --       return $ IM.foldrWithKey' (\src eid acc -> E eid src vid : acc) [] preds
 
-instance Graph SimpleBiDigraph where
+instance Thawable SimpleBiDigraph where
   type MutableGraph SimpleBiDigraph = MSimpleBiDigraph
-  -- FIXME: This will be more complicated if we support removing vertices
-  vertices g = map V [0 .. vertexCount g - 1]
-  edges g = concatMap (outEdges g) (vertices g)
-  successors g (V v)
-    | outOfRange g v = []
-    | otherwise = map V $ IM.keys $ V.unsafeIndex (graphSuccs g) v
-  outEdges g (V v)
-    | outOfRange g v = []
-    | otherwise =
-      let succs = V.unsafeIndex (graphSuccs g) v
-      in IM.elems succs
---      in IM.foldrWithKey' (\dst eid acc -> E eid v dst : acc) [] succs
-  edgeExists g (V src) (V dst)
-    | outOfRange g src || outOfRange g dst = False
-    | otherwise = IM.member dst (V.unsafeIndex (graphSuccs g) src)
-  maxVertexId g = V.length (graphSuccs g) - 1
-  isEmpty = (==0) . vertexCount
   thaw g = do
     vc <- newSTRef (vertexCount g)
     ec <- newSTRef (edgeCount g)
@@ -193,6 +175,24 @@ instance Graph SimpleBiDigraph where
                       , mgraphPreds = pref
                       , mgraphSuccs = sref
                       }
+
+instance Graph SimpleBiDigraph where
+  -- FIXME: This will be more complicated if we support removing vertices
+  vertices g = map V [0 .. vertexCount g - 1]
+  edges g = concatMap (outEdges g) (vertices g)
+  successors g (V v)
+    | outOfRange g v = []
+    | otherwise = map V $ IM.keys $ V.unsafeIndex (graphSuccs g) v
+  outEdges g (V v)
+    | outOfRange g v = []
+    | otherwise =
+      let succs = V.unsafeIndex (graphSuccs g) v
+      in IM.elems succs
+  edgeExists g (V src) (V dst)
+    | outOfRange g src || outOfRange g dst = False
+    | otherwise = IM.member dst (V.unsafeIndex (graphSuccs g) src)
+  maxVertexId g = V.length (graphSuccs g) - 1
+  isEmpty = (==0) . vertexCount
 
 
 instance Bidirectional SimpleBiDigraph  where

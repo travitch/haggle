@@ -255,7 +255,7 @@ isEmpty :: (I.Graph g) => LabeledGraph g nl el -> Bool
 isEmpty = I.isEmpty . rawGraph
 {-# INLINE isEmpty #-}
 
-thaw :: (I.Graph g)
+thaw :: (I.Thawable g)
      => LabeledGraph g nl el
      -> ST s (LabeledMGraph (I.MutableGraph g) nl el s)
 thaw lg = do
@@ -269,8 +269,11 @@ thaw lg = do
              , edgeLabelStorage = eref
              }
 
-instance (I.Graph g) => I.Graph (LabeledGraph g nl el) where
+instance (I.Thawable g) => I.Thawable (LabeledGraph g nl el) where
   type MutableGraph (LabeledGraph g nl el) = LabeledMGraph (I.MutableGraph g) nl el
+  thaw = thaw
+
+instance (I.Graph g) => I.Graph (LabeledGraph g nl el) where
   vertices = vertices
   edges = edges
   successors = successors
@@ -278,7 +281,6 @@ instance (I.Graph g) => I.Graph (LabeledGraph g nl el) where
   edgeExists = edgeExists
   maxVertexId = maxVertexId
   isEmpty = isEmpty
-  thaw = thaw
 
 predecessors :: (I.Bidirectional g) => LabeledGraph g nl el -> I.Vertex -> [I.Vertex]
 predecessors lg = I.predecessors (rawGraph lg)
