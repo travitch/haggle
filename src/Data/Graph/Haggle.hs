@@ -69,9 +69,13 @@ module Data.Graph.Haggle (
   MLabeledVertex(..),
   -- * Immutable Graphs
   Graph(..),
+  Thawable(..),
   Bidirectional(..),
   HasEdgeLabel(..),
-  HasVertexLabel(..)
+  HasVertexLabel(..),
+  -- * Inductive Graphs
+  InductiveGraph(..),
+  Context(..)
   ) where
 
 import Control.Monad ( forM, liftM )
@@ -128,9 +132,6 @@ class (MGraph g) => MLabeledEdge g where
       True -> return Nothing
       False -> liftM Just (unsafeGetEdgeLabel g e)
   unsafeGetEdgeLabel :: g s -> Edge -> ST s (MEdgeLabel g)
-  unsafeGetEdgeLabel g e = do
-    Just l <- getEdgeLabel g e
-    return l
   addLabeledEdge :: g s -> Vertex -> Vertex -> MEdgeLabel g -> ST s (Maybe Edge)
 
 class (MGraph g) => MLabeledVertex g where

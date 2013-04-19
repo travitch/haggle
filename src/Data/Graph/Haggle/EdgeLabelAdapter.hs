@@ -122,12 +122,13 @@ addVertex :: (I.MGraph g, I.MAddVertex g)
 addVertex lg = I.addVertex (A.rawMGraph (unELMG lg))
 {-# INLINE addVertex #-}
 
-getEdgeLabel :: (I.MGraph g, I.MAddEdge g)
-             => EdgeLabeledMGraph g el s
-             -> I.Edge
-             -> ST s (Maybe el)
-getEdgeLabel lg = I.getEdgeLabel (unELMG lg)
-{-# INLINE getEdgeLabel #-}
+unsafeGetEdgeLabel :: (I.MGraph g, I.MAddEdge g)
+                   => EdgeLabeledMGraph g el s
+                   -> I.Edge
+                   -> ST s el
+unsafeGetEdgeLabel (ELMG g) e =
+  I.unsafeGetEdgeLabel g e
+{-# INLINE unsafeGetEdgeLabel #-}
 
 getSuccessors :: (I.MGraph g)
               => EdgeLabeledMGraph g el s
