@@ -187,9 +187,12 @@ class (Graph g) => HasEdgeLabel g where
   edgeLabel :: g -> Edge -> Maybe (EdgeLabel g)
   labeledEdges :: g -> [(Edge, EdgeLabel g)]
   labeledOutEdges :: g -> Vertex -> [(Edge, EdgeLabel g)]
+  labeledOutEdges g v = map (addEdgeLabel g) (outEdges g v)
+
 
 class (HasEdgeLabel g, Bidirectional g) => BidirectionalEdgeLabel g where
   labeledInEdges :: g -> Vertex -> [(Edge, EdgeLabel g)]
+  labeledInEdges g v = map (addEdgeLabel g) (inEdges g v)
 
 -- | The interface for immutable graphs with labeled vertices.
 class (Graph g) => HasVertexLabel g where
@@ -239,3 +242,15 @@ class (Graph g, HasEdgeLabel g, HasVertexLabel g) => InductiveGraph g where
     (_, g') <- match g v
     return g'
 
+addEdgeLabel :: (HasEdgeLabel g) => g -> Edge -> (Edge, EdgeLabel g)
+addEdgeLabel g e = (e, el)
+  where
+   Just el = edgeLabel g e
+
+{-
+data InductiveReverseMap g = IRM { irmG :: g
+                                 , irm :: Map (VertexLabel g) Vertex
+                                 }
+instance (InductiveGraph g) => InductiveGraph (InductiveReverseMap g) where
+  ...
+-}
