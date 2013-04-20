@@ -294,6 +294,8 @@ instance (I.Bidirectional g) => I.Bidirectional (LabeledGraph g nl el) where
   predecessors = predecessors
   inEdges = inEdges
 
+instance (I.Bidirectional g) => I.BidirectionalEdgeLabel (LabeledGraph g nl el)
+
 edgeLabel :: LabeledGraph g nl el -> I.Edge -> Maybe el
 edgeLabel lg e = edgeLabelStore lg V.!? I.edgeId e
 {-# INLINE edgeLabel #-}
