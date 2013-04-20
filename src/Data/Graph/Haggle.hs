@@ -212,6 +212,8 @@ class (Graph g, HasEdgeLabel g, HasVertexLabel g) => InductiveGraph g where
   -- decomposes the graph into the 'Context' c of @v@ and the rest of
   -- the graph @g'@.
   match :: g -> Vertex -> Maybe (Context g, g)
+  -- | Return the context of a 'Vertex'
+  context :: g -> Vertex -> Maybe (Context g)
   -- | Insert a new labeled 'Vertex' into the graph.
   insertLabeledVertex :: g -> VertexLabel g -> (Vertex, g)
   -- | Must return 'Nothing' if either the source or destination 'Vertex' is not

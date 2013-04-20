@@ -20,7 +20,9 @@ data PatriciaTree nl el = Gr { graphRepr :: IntMap (Ctx nl el) }
 instance I.Graph (PatriciaTree nl el) where
   vertices = map I.V . IM.keys . graphRepr
   isEmpty = IM.null . graphRepr
-  maxVertexId = fst . IM.findMax . graphRepr
+  maxVertexId (Gr g)
+    | IM.null g = 0
+    | otherwise = fst $ IM.findMax g
   edgeExists (Gr g) (I.V src) (I.V dst) = fromMaybe False $ do
     Ctx _ _ _ ss <- IM.lookup src g
     return $ IM.member dst ss
@@ -86,7 +88,7 @@ instance I.InductiveGraph (PatriciaTree nl el) where
         g' = IM.insert vid (Ctx mempty v lab mempty) g
     in (v, Gr g')
   insertLabeledEdge gr@(Gr g) v1@(I.V src) v2@(I.V dst) lab = do
-    guard (not (IM.member src g && IM.member dst g))
+    guard (IM.member src g && IM.member dst g)
     guard (not (I.edgeExists gr v1 v2))
     let e = I.E (-1) src dst
     Ctx spp sv sl sss <- IM.lookup src g
@@ -105,6 +107,9 @@ instance I.InductiveGraph (PatriciaTree nl el) where
         !g' = IM.insert src sctx' g
         !g'' = IM.insert dst dctx' g'
     return (Gr g'')
+  context (Gr g) (I.V v) = do
+    Ctx pp _ l ss <- IM.lookup v g
+    return $ I.Context (toAdj pp) l (toAdj ss)
   match (Gr g) (I.V v) = do
     Ctx pp _ l ss <- IM.lookup v g
     let g' = foldr (IM.adjust (removeSucc v)) g (IM.keys pp)
