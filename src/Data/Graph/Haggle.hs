@@ -1,4 +1,5 @@
-{-# LANGUAGE KindSignatures, TypeFamilies #-}
+{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE TypeFamilies #-}
 -- | Haggle is a Haskell graph library.
 --
 -- The main idea behind haggle is that graphs are constructed with mutation
@@ -172,7 +173,7 @@ class Graph g where
   isEmpty :: g -> Bool
 
 class (Graph g) => Thawable g where
-  type MutableGraph g
+  type MutableGraph g :: * -> *
   thaw :: g -> ST s (MutableGraph g s)
 
 -- | The interface for immutable graphs with efficient access to
