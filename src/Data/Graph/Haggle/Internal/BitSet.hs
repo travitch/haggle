@@ -14,7 +14,7 @@ import Data.Word ( Word64 )
 data BitSet s = BS (STVector s Word64) {-# UNPACK #-} !Int
 
 bitsPerWord :: Int
-bitsPerWord = B.bitSize (undefined :: Word64)
+bitsPerWord = 64
 
 -- | Allocate a new 'BitSet' with @n@ bits.  Bits are all
 -- initialized to zero.
