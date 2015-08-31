@@ -30,7 +30,6 @@ hashVertex s (V i) = hashWithSalt s i
 
 -- | An edge between two vertices.
 data Edge = E {-# UNPACK #-}!Int {-# UNPACK #-}!Int {-# UNPACK #-}!Int
--- data Edge = E Int Int Int
   deriving (Eq, Ord, Show)
 
 instance Hashable Edge where
@@ -57,3 +56,12 @@ edgeDest (E _ _ d) = V d
 {-# INLINE edgeDest #-}
 
 
+{- Note [Edge Format]
+
+Edges track (in order)
+
+1) The edge unique identifier
+2) The edge source
+3) The edge destination
+
+-}
