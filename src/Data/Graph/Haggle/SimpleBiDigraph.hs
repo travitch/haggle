@@ -204,7 +204,6 @@ instance Bidirectional SimpleBiDigraph  where
     | otherwise =
       let preds = V.unsafeIndex (graphPreds g) v
       in IM.elems preds
-      -- in IM.foldrWithKey' (\src eid acc -> E eid src v : acc) [] preds
 
 -- Helpers
 
