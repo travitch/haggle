@@ -17,7 +17,7 @@ import Control.Monad ( when )
 import qualified Control.Monad.Primitive as P
 import qualified Control.Monad.Ref as R
 import Data.IntMap.Strict ( IntMap )
-import qualified Data.IntMap.Strict as IM
+import qualified Data.IntMap as IM
 import qualified Data.Vector.Mutable as MV
 import qualified Data.Vector as V
 
