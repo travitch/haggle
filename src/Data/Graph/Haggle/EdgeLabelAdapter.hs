@@ -11,7 +11,8 @@ module Data.Graph.Haggle.EdgeLabelAdapter (
   mapEdgeLabel
   ) where
 
-import Control.Monad.ST
+import qualified Control.Monad.Primitive as P
+import qualified Control.Monad.Ref as R
 import qualified Data.Graph.Haggle as I
 import qualified Data.Graph.Haggle.Internal.Adapter as A
 
@@ -94,92 +95,92 @@ instance (I.Graph g) => I.HasEdgeLabel (EdgeLabeledGraph g el) where
   edgeLabel = edgeLabel
   labeledEdges = labeledEdges
 
-newEdgeLabeledGraph :: (I.MGraph g)
-                    => ST s (g s)
-                    -> ST s (EdgeLabeledMGraph g nl s)
+newEdgeLabeledGraph :: (I.MGraph g, P.PrimMonad m, R.MonadRef m)
+                    => m (g m)
+                    -> m (EdgeLabeledMGraph g nl m)
 newEdgeLabeledGraph newG = do
   g <- A.newLabeledGraph newG
   return $ ELMG g
 {-# INLINE newEdgeLabeledGraph #-}
 
-newSizedEdgeLabeledGraph :: (I.MGraph g)
-                         => (Int -> Int -> ST s (g s))
+newSizedEdgeLabeledGraph :: (I.MGraph g, P.PrimMonad m, R.MonadRef m)
+                         => (Int -> Int -> m (g m))
                          -> Int
                          -> Int
-                         -> ST s (EdgeLabeledMGraph g el s)
+                         -> m (EdgeLabeledMGraph g el m)
 newSizedEdgeLabeledGraph newG szV szE = do
   g <- A.newSizedLabeledGraph newG szV szE
   return $ ELMG g
 {-# INLINE newSizedEdgeLabeledGraph #-}
 
-addLabeledEdge :: (I.MGraph g, I.MAddEdge g)
-               => EdgeLabeledMGraph g el s
+addLabeledEdge :: (I.MGraph g, I.MAddEdge g, P.PrimMonad m, R.MonadRef m)
+               => EdgeLabeledMGraph g el m
                -> I.Vertex
                -> I.Vertex
                -> el
-               -> ST s (Maybe I.Edge)
+               -> m (Maybe I.Edge)
 addLabeledEdge lg = I.addLabeledEdge (unELMG lg)
 {-# INLINE addLabeledEdge #-}
 
-addVertex :: (I.MGraph g, I.MAddVertex g)
-          => EdgeLabeledMGraph g el s
-          -> ST s I.Vertex
+addVertex :: (I.MGraph g, I.MAddVertex g, P.PrimMonad m, R.MonadRef m)
+          => EdgeLabeledMGraph g el m
+          -> m I.Vertex
 addVertex lg = I.addVertex (A.rawMGraph (unELMG lg))
 {-# INLINE addVertex #-}
 
-unsafeGetEdgeLabel :: (I.MGraph g, I.MAddEdge g)
-                   => EdgeLabeledMGraph g el s
+unsafeGetEdgeLabel :: (I.MGraph g, I.MAddEdge g, P.PrimMonad m, R.MonadRef m)
+                   => EdgeLabeledMGraph g el m
                    -> I.Edge
-                   -> ST s el
+                   -> m el
 unsafeGetEdgeLabel (ELMG g) e =
   I.unsafeGetEdgeLabel g e
 {-# INLINE unsafeGetEdgeLabel #-}
 
-getSuccessors :: (I.MGraph g)
-              => EdgeLabeledMGraph g el s
+getSuccessors :: (I.MGraph g, P.PrimMonad m, R.MonadRef m)
+              => EdgeLabeledMGraph g el m
               -> I.Vertex
-              -> ST s [I.Vertex]
+              -> m [I.Vertex]
 getSuccessors lg = I.getSuccessors (unELMG lg)
 {-# INLINE getSuccessors #-}
 
-getOutEdges :: (I.MGraph g)
-            => EdgeLabeledMGraph g el s -> I.Vertex -> ST s [I.Edge]
+getOutEdges :: (I.MGraph g, P.PrimMonad m, R.MonadRef m)
+            => EdgeLabeledMGraph g el m -> I.Vertex -> m [I.Edge]
 getOutEdges lg = I.getOutEdges (unELMG lg)
 {-# INLINE getOutEdges #-}
 
-countVertices :: (I.MGraph g) => EdgeLabeledMGraph g el s -> ST s Int
+countVertices :: (I.MGraph g, P.PrimMonad m, R.MonadRef m) => EdgeLabeledMGraph g el m -> m Int
 countVertices = I.countVertices . unELMG
 {-# INLINE countVertices #-}
 
-getVertices :: (I.MGraph g) => EdgeLabeledMGraph g el s -> ST s [I.Vertex]
+getVertices :: (I.MGraph g, P.PrimMonad m, R.MonadRef m) => EdgeLabeledMGraph g el m -> m [I.Vertex]
 getVertices = I.getVertices . unELMG
 {-# INLINE getVertices #-}
 
-countEdges :: (I.MGraph g) => EdgeLabeledMGraph g el s -> ST s Int
+countEdges :: (I.MGraph g, P.PrimMonad m, R.MonadRef m) => EdgeLabeledMGraph g el m -> m Int
 countEdges = I.countEdges . unELMG
 {-# INLINE countEdges #-}
 
-getPredecessors :: (I.MBidirectional g)
-                => EdgeLabeledMGraph g el s -> I.Vertex -> ST s [I.Vertex]
+getPredecessors :: (I.MBidirectional g, P.PrimMonad m, R.MonadRef m)
+                => EdgeLabeledMGraph g el m -> I.Vertex -> m [I.Vertex]
 getPredecessors lg = I.getPredecessors (unELMG lg)
 {-# INLINE getPredecessors #-}
 
-getInEdges :: (I.MBidirectional g)
-           => EdgeLabeledMGraph g el s -> I.Vertex -> ST s [I.Edge]
+getInEdges :: (I.MBidirectional g, P.PrimMonad m, R.MonadRef m)
+           => EdgeLabeledMGraph g el m -> I.Vertex -> m [I.Edge]
 getInEdges lg = I.getInEdges (unELMG lg)
 {-# INLINE getInEdges #-}
 
-checkEdgeExists :: (I.MGraph g)
-                => EdgeLabeledMGraph g el s
+checkEdgeExists :: (I.MGraph g, P.PrimMonad m, R.MonadRef m)
+                => EdgeLabeledMGraph g el m
                 -> I.Vertex
                 -> I.Vertex
-                -> ST s Bool
+                -> m Bool
 checkEdgeExists lg = I.checkEdgeExists (unELMG lg)
 {-# INLINE checkEdgeExists #-}
 
-freeze :: (I.MGraph g)
-       => EdgeLabeledMGraph g el s
-       -> ST s (EdgeLabeledGraph (I.ImmutableGraph g) el)
+freeze :: (I.MGraph g, P.PrimMonad m, R.MonadRef m)
+       => EdgeLabeledMGraph g el m
+       -> m (EdgeLabeledGraph (I.ImmutableGraph g) el)
 freeze lg = do
   g' <- I.freeze (unELMG lg)
   return $ ELG g'

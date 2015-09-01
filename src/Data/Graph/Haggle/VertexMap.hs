@@ -23,10 +23,10 @@ module Data.Graph.Haggle.VertexMap (
   vertexMapFromRef ) where
 
 import Control.Monad ( liftM )
-import Control.Monad.ST
+import qualified Control.Monad.Primitive as P
+import qualified Control.Monad.Ref as R
 import Data.Map ( Map )
 import qualified Data.Map as M
-import Data.STRef
 import Data.Tuple ( swap )
 
 import Data.Graph.Haggle
@@ -42,11 +42,11 @@ emptyVertexMap = VM M.empty
 -- Looks up the 'Vertex' for @lbl@ in @g@.  If no 'Vertex' in @g@ has that
 -- label, a new 'Vertex' is allocated and returned.  The updated vertex
 -- mapping @m'@ is returned, too.
-vertexForLabel :: (MLabeledVertex g, Ord (MVertexLabel g))
-               => g s
+vertexForLabel :: (MLabeledVertex g, Ord (MVertexLabel g), P.PrimMonad m, R.MonadRef m)
+               => g m
                -> VertexMap (MVertexLabel g)
                -> MVertexLabel g
-               -> ST s (Vertex, VertexMap (MVertexLabel g))
+               -> m (Vertex, VertexMap (MVertexLabel g))
 vertexForLabel g vm@(VM m) lbl
   | Just v <- M.lookup lbl m = return (v, vm)
   | otherwise = do
@@ -66,30 +66,30 @@ vertexMapFromGraph = VM . M.fromList . map swap . labeledVertices
 
 -- | A 'VertexMap' wrapped up in a mutable ref for possibly
 -- easier access in 'vertexMapFromRef'.
-newtype VertexMapRef nl s = VMR (STRef s (VertexMap nl))
+newtype VertexMapRef nl m = VMR (R.Ref m (VertexMap nl))
 
 -- | Extract the pure 'VertexMap' from the mutable ref.  This is useful
 -- to retain the mapping after the graph is fully constructed.
-vertexMapFromRef :: VertexMapRef nl s -> ST s (VertexMap nl)
-vertexMapFromRef (VMR ref) = readSTRef ref
+vertexMapFromRef :: (P.PrimMonad m, R.MonadRef m) => VertexMapRef nl m -> m (VertexMap nl)
+vertexMapFromRef (VMR ref) = R.readRef ref
 
 -- | Allocate a new 'VertexMap' buried in a mutable ref.
-newVertexMapRef :: ST s (VertexMapRef nl s)
-newVertexMapRef = liftM VMR $ newSTRef emptyVertexMap
+newVertexMapRef :: (P.PrimMonad m, R.MonadRef m) => m (VertexMapRef nl m)
+newVertexMapRef = liftM VMR $ R.newRef emptyVertexMap
 
 -- | Just like 'vertexForLabel', but holding the mapping in a ref instead
 -- of threading it.  Usage is simpler:
 --
 -- > v <- vertexForLabelRef g m lbl
-vertexForLabelRef :: (MLabeledVertex g, Ord (MVertexLabel g))
-                  => g s
-                  -> VertexMapRef (MVertexLabel g) s
+vertexForLabelRef :: (MLabeledVertex g, Ord (MVertexLabel g), P.PrimMonad m, R.MonadRef m)
+                  => g m
+                  -> VertexMapRef (MVertexLabel g) m
                   -> MVertexLabel g
-                  -> ST s Vertex
+                  -> m Vertex
 vertexForLabelRef g (VMR ref) lbl = do
-  vm <- readSTRef ref
+  vm <- R.readRef ref
   (v, vm') <- vertexForLabel g vm lbl
-  writeSTRef ref vm'
+  R.writeRef ref vm'
   return v
 
 

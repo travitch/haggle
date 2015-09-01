@@ -81,7 +81,8 @@ module Data.Graph.Haggle (
   ) where
 
 import Control.Monad ( forM, liftM )
-import Control.Monad.ST
+import qualified Control.Monad.Primitive as P
+import qualified Control.Monad.Ref as R
 import Data.Maybe ( fromMaybe )
 import Data.Graph.Haggle.Internal.Basic
 
@@ -91,57 +92,57 @@ class MGraph g where
   type ImmutableGraph g
 
   -- | List all of the vertices in the graph.
-  getVertices :: g s -> ST s [Vertex]
+  getVertices :: (P.PrimMonad m, R.MonadRef m) => g m -> m [Vertex]
 
   -- | List the successors for the given 'Vertex'.
-  getSuccessors :: g s -> Vertex -> ST s [Vertex]
+  getSuccessors :: (P.PrimMonad m, R.MonadRef m) => g m -> Vertex -> m [Vertex]
 
   -- | Get all of the 'Edge's with the given 'Vertex' as their source.
-  getOutEdges :: g s -> Vertex -> ST s [Edge]
+  getOutEdges :: (P.PrimMonad m, R.MonadRef m) => g m -> Vertex -> m [Edge]
 
   -- | Return the number of vertices in the graph
-  countVertices :: g s -> ST s Int
+  countVertices :: (P.PrimMonad m, R.MonadRef m) => g m -> m Int
 
   -- | Return the number of edges in the graph
-  countEdges :: g s -> ST s Int
+  countEdges :: (P.PrimMonad m, R.MonadRef m) => g m -> m Int
 
   -- | Edge existence test; this has a default implementation,
   -- but can be overridden if an implementation can support a
   -- better-than-linear version.
-  checkEdgeExists :: g s -> Vertex -> Vertex -> ST s Bool
+  checkEdgeExists :: (P.PrimMonad m, R.MonadRef m) => g m -> Vertex -> Vertex -> m Bool
   checkEdgeExists g src dst = do
     succs <- getSuccessors g src
     return $ any (==dst) succs
 
   -- | Freeze the mutable graph into an immutable graph.
-  freeze :: g s -> ST s (ImmutableGraph g)
+  freeze :: (P.PrimMonad m, R.MonadRef m) => g m -> m (ImmutableGraph g)
 
 class (MGraph g) => MAddVertex g where
   -- | Add a new 'Vertex' to the graph, returning its handle.
-  addVertex :: g s -> ST s Vertex
+  addVertex :: (P.PrimMonad m, R.MonadRef m) => g m -> m Vertex
 
 class (MGraph g) => MAddEdge g where
   -- | Add a new 'Edge' to the graph from @src@ to @dst@.  If either
   -- the source or destination is not in the graph, returns Nothing.
   -- Otherwise, the 'Edge' reference is returned.
-  addEdge :: g s -> Vertex -> Vertex -> ST s (Maybe Edge)
+  addEdge :: (P.PrimMonad m, R.MonadRef m) => g m -> Vertex -> Vertex -> m (Maybe Edge)
 
 class (MGraph g) => MLabeledEdge g where
   type MEdgeLabel g
-  getEdgeLabel :: g s -> Edge -> ST s (Maybe (MEdgeLabel g))
+  getEdgeLabel :: (P.PrimMonad m, R.MonadRef m) => g m -> Edge -> m (Maybe (MEdgeLabel g))
   getEdgeLabel g e = do
     nEs <- countEdges g
     case edgeId e >= nEs of
       True -> return Nothing
       False -> liftM Just (unsafeGetEdgeLabel g e)
-  unsafeGetEdgeLabel :: g s -> Edge -> ST s (MEdgeLabel g)
-  addLabeledEdge :: g s -> Vertex -> Vertex -> MEdgeLabel g -> ST s (Maybe Edge)
+  unsafeGetEdgeLabel :: (P.PrimMonad m, R.MonadRef m) => g m -> Edge -> m (MEdgeLabel g)
+  addLabeledEdge :: (P.PrimMonad m, R.MonadRef m) => g m -> Vertex -> Vertex -> MEdgeLabel g -> m (Maybe Edge)
 
 class (MGraph g) => MLabeledVertex g where
   type MVertexLabel g
-  getVertexLabel :: g s -> Vertex -> ST s (Maybe (MVertexLabel g))
-  addLabeledVertex :: g s -> MVertexLabel g -> ST s Vertex
-  getLabeledVertices :: g s -> ST s [(Vertex, MVertexLabel g)]
+  getVertexLabel :: (P.PrimMonad m, R.MonadRef m) => g m -> Vertex -> m (Maybe (MVertexLabel g))
+  addLabeledVertex :: (P.PrimMonad m, R.MonadRef m) => g m -> MVertexLabel g -> m Vertex
+  getLabeledVertices :: (P.PrimMonad m, R.MonadRef m) => g m -> m [(Vertex, MVertexLabel g)]
   getLabeledVertices g = do
     vs <- getVertices g
     forM vs $ \v -> do
@@ -152,15 +153,15 @@ class (MGraph g) => MLabeledVertex g where
 -- implementations are not required to reclaim storage from removed
 -- vertices (just make them inaccessible).
 class (MGraph g) => MRemovable g where
-  removeVertex :: g s -> Vertex -> ST s ()
-  removeEdgesBetween :: g s -> Vertex -> Vertex -> ST s ()
-  removeEdge :: g s -> Edge -> ST s ()
+  removeVertex :: (P.PrimMonad m, R.MonadRef m) => g m -> Vertex -> m ()
+  removeEdgesBetween :: (P.PrimMonad m, R.MonadRef m) => g m -> Vertex -> Vertex -> m ()
+  removeEdge :: (P.PrimMonad m, R.MonadRef m) => g m -> Edge -> m ()
 
 -- | An interface for graphs that support looking at predecessor (incoming
 -- edges) efficiently.
 class (MGraph g) => MBidirectional g where
-  getPredecessors :: g s -> Vertex -> ST s [Vertex]
-  getInEdges :: g s -> Vertex -> ST s [Edge]
+  getPredecessors :: (P.PrimMonad m, R.MonadRef m) => g m -> Vertex -> m [Vertex]
+  getInEdges :: (P.PrimMonad m, R.MonadRef m) => g m -> Vertex -> m [Edge]
 
 -- | The basic interface of immutable graphs.
 class Graph g where
@@ -173,8 +174,8 @@ class Graph g where
   isEmpty :: g -> Bool
 
 class (Graph g) => Thawable g where
-  type MutableGraph g :: * -> *
-  thaw :: g -> ST s (MutableGraph g s)
+  type MutableGraph g :: (* -> *) -> *
+  thaw :: (P.PrimMonad m, R.MonadRef m) => g -> m (MutableGraph g m)
 
 -- | The interface for immutable graphs with efficient access to
 -- incoming edges.
