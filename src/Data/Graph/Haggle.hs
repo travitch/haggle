@@ -127,18 +127,24 @@ module Data.Graph.Haggle (
   -- | These classes are a critical implementation detail, but are
   -- re-exported to simplify writing type signatures for generic
   -- functions.
-  I.MGraph(I.ImmutableGraph),
+  I.MGraph,
+  I.ImmutableGraph,
   I.MAddVertex,
   I.MAddEdge,
-  I.MLabeledEdge(I.MEdgeLabel),
-  I.MLabeledVertex(I.MVertexLabel),
+  I.MLabeledEdge,
+  I.MEdgeLabel,
+  I.MLabeledVertex,
+  I.MVertexLabel,
   I.MRemovable,
   I.MBidirectional,
   I.Graph,
-  I.Thawable(I.MutableGraph),
+  I.Thawable,
+  I.MutableGraph,
   I.Bidirectional,
-  I.HasEdgeLabel(I.EdgeLabel),
-  I.HasVertexLabel(I.VertexLabel),
+  I.HasEdgeLabel,
+  I.EdgeLabel,
+  I.HasVertexLabel,
+  I.VertexLabel,
   I.BidirectionalEdgeLabel,
   I.InductiveGraph
   ) where
