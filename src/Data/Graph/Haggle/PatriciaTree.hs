@@ -15,6 +15,18 @@ import qualified Data.Graph.Haggle.Classes as I
 import qualified Data.Graph.Haggle.Internal.Basic as I
 
 data Ctx nl el = Ctx !(IntMap el) I.Vertex nl !(IntMap el)
+
+-- | The 'PatriciaTree' is a graph implementing the 'I.InductiveGraph'
+-- interface (as well as the other immutable graph interfaces).  It is
+-- based on the graph type provided by fgl.
+--
+-- Inductive graphs support more interesting decompositions than the
+-- other graph interfaces in this library, at the cost of less compact
+-- representations and some additional overhead on some operations, as
+-- most must go through the 'I.match' operator.
+--
+-- This graph type is most useful for incremental construction in pure
+-- code.  It also supports node removal from pure code.
 data PatriciaTree nl el = Gr { graphRepr :: IntMap (Ctx nl el) }
 
 instance I.Graph (PatriciaTree nl el) where

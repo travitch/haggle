@@ -149,6 +149,8 @@ class (Graph g) => HasVertexLabel g where
   vertexLabel :: g -> Vertex -> Maybe (VertexLabel g)
   labeledVertices :: g -> [(Vertex, VertexLabel g)]
 
+-- | Contexts represent the "context" of a 'Vertex', which includes the incoming edges of the 'Vertex',
+-- the label of the 'Vertex', and the outgoing edges of the 'Vertex'.
 data Context g = Context [(EdgeLabel g, Vertex)] (VertexLabel g) [(EdgeLabel g, Vertex)]
 
 class (Graph g, HasEdgeLabel g, HasVertexLabel g) => InductiveGraph g where

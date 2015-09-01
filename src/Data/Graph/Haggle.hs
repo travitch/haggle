@@ -55,13 +55,40 @@
 -- structure of the graph.  The adapters each work with any type of underlying
 -- graph.
 module Data.Graph.Haggle (
-  -- * Basic Types
+  -- * Graph types
+  -- ** Mutable graphs
+  D.MDigraph,
+  B.MBiDigraph,
+  SBD.MSimpleBiDigraph,
+  -- *** Adapters
+  EA.EdgeLabeledMGraph,
+  EA.newEdgeLabeledGraph,
+  EA.newSizedEdgeLabeledGraph,
+  VA.VertexLabeledMGraph,
+  VA.newVertexLabeledGraph,
+  VA.newSizedVertexLabeledGraph,
+  A.LabeledMGraph,
+  A.newLabeledGraph,
+  A.newSizedLabeledGraph,
+  -- ** Immutable graphs
+  D.Digraph,
+  B.BiDigraph,
+  SBD.SimpleBiDigraph,
+  -- *** Adapters
+  EA.EdgeLabeledGraph,
+  VA.VertexLabeledGraph,
+  VA.fromEdgeList,
+  A.LabeledGraph,
+  A.fromLabeledEdgeList,
+  -- ** Inductive graphs
+  PT.PatriciaTree,
+  -- * Basic types
   I.Vertex,
   I.Edge,
   I.edgeSource,
   I.edgeDest,
 
-  -- * Mutable graphs
+  -- * Mutable graph operations
   getVertices,
   getSuccessors,
   getOutEdges,
@@ -89,7 +116,11 @@ module Data.Graph.Haggle (
   getPredecessors,
   getInEdges,
 
-  -- * Immutable Graphs
+  -- ** Mutable labeled graph operations
+  A.mapEdgeLabel,
+  A.mapVertexLabel,
+
+  -- * Immutable graph operations
   vertices,
   edges,
   successors,
@@ -110,7 +141,7 @@ module Data.Graph.Haggle (
 
   labeledInEdges,
 
-  -- * Inductive Graphs
+  -- * Inductive graph operations
   emptyGraph,
   match,
   context,
@@ -153,6 +184,14 @@ import qualified Control.Monad.Primitive as P
 import qualified Control.Monad.Ref as R
 
 import qualified Data.Graph.Haggle.Classes as I
+import qualified Data.Graph.Haggle.Digraph as D
+import qualified Data.Graph.Haggle.BiDigraph as B
+import qualified Data.Graph.Haggle.SimpleBiDigraph as SBD
+import qualified Data.Graph.Haggle.PatriciaTree as PT
+
+import qualified Data.Graph.Haggle.EdgeLabelAdapter as EA
+import qualified Data.Graph.Haggle.VertexLabelAdapter as VA
+import qualified Data.Graph.Haggle.LabelAdapter as A
 
 -- Mutable graphs
 
