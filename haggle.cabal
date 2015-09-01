@@ -28,6 +28,7 @@ library
   ghc-prof-options: -auto-all
   exposed-modules: Data.Graph.Haggle,
                    Data.Graph.Haggle.BiDigraph,
+                   Data.Graph.Haggle.Classes,
                    Data.Graph.Haggle.Digraph,
                    Data.Graph.Haggle.SimpleBiDigraph,
                    Data.Graph.Haggle.PatriciaTree,

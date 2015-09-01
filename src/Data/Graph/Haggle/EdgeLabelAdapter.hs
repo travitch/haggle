@@ -13,7 +13,7 @@ module Data.Graph.Haggle.EdgeLabelAdapter (
 
 import qualified Control.Monad.Primitive as P
 import qualified Control.Monad.Ref as R
-import qualified Data.Graph.Haggle as I
+import qualified Data.Graph.Haggle.Classes as I
 import qualified Data.Graph.Haggle.Internal.Adapter as A
 
 newtype EdgeLabeledMGraph g el s = ELMG { unELMG :: A.LabeledMGraph g () el s }

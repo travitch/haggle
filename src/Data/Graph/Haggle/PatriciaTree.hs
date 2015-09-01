@@ -11,7 +11,7 @@ import qualified Data.IntMap as IM
 import Data.Maybe ( fromMaybe )
 import Data.Monoid
 
-import qualified Data.Graph.Haggle as I
+import qualified Data.Graph.Haggle.Classes as I
 import qualified Data.Graph.Haggle.Internal.Basic as I
 
 data Ctx nl el = Ctx !(IntMap el) I.Vertex nl !(IntMap el)

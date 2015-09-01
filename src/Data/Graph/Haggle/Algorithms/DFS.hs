@@ -49,6 +49,7 @@ import Data.Tree ( Tree )
 import qualified Data.Tree as T
 
 import Data.Graph.Haggle
+import Data.Graph.Haggle.Classes ( maxVertexId )
 import Data.Graph.Haggle.Internal.Basic
 import Data.Graph.Haggle.Internal.BitSet
 

@@ -21,7 +21,7 @@ import qualified Data.IntMap as IM
 import qualified Data.Vector.Mutable as MV
 import qualified Data.Vector as V
 
-import Data.Graph.Haggle
+import Data.Graph.Haggle.Classes
 import Data.Graph.Haggle.Internal.Basic
 
 -- | A mutable bidirectional graph

@@ -19,7 +19,7 @@ import qualified Control.Monad.Primitive as P
 import qualified Control.Monad.Ref as R
 import Control.Monad.ST ( ST, runST )
 
-import qualified Data.Graph.Haggle as I
+import qualified Data.Graph.Haggle.Classes as I
 import qualified Data.Graph.Haggle.VertexMap as VM
 import qualified Data.Graph.Haggle.Internal.Adapter as A
 

@@ -26,7 +26,7 @@ import qualified Control.Monad.Ref as R
 import qualified Data.Vector.Unboxed.Mutable as MUV
 import qualified Data.Vector.Unboxed as UV
 
-import Data.Graph.Haggle
+import Data.Graph.Haggle.Classes
 import Data.Graph.Haggle.Internal.Basic
 
 -- | This is a compact (mutable) directed graph.

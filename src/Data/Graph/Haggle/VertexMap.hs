@@ -29,7 +29,7 @@ import Data.Map ( Map )
 import qualified Data.Map as M
 import Data.Tuple ( swap )
 
-import Data.Graph.Haggle
+import Data.Graph.Haggle.Classes
 
 -- | A simple mapping from labels to their 'Vertex'
 newtype VertexMap nl = VM (Map nl Vertex)

@@ -30,7 +30,7 @@ import Control.Monad.ST ( ST, runST )
 import Data.Vector ( Vector )
 import qualified Data.Vector as V
 import qualified Data.Vector.Mutable as MV
-import qualified Data.Graph.Haggle as I
+import qualified Data.Graph.Haggle.Classes as I
 import qualified Data.Graph.Haggle.VertexMap as VM
 import qualified Data.Graph.Haggle.Internal.Basic as I
 
