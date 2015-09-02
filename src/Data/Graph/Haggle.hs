@@ -58,8 +58,14 @@ module Data.Graph.Haggle (
   -- * Graph types
   -- ** Mutable graphs
   D.MDigraph,
+  D.newMDigraph,
+  D.newSizedMDigraph,
   B.MBiDigraph,
+  B.newMBiDigraph,
+  B.newSizedMBiDigraph,
   SBD.MSimpleBiDigraph,
+  SBD.newMSimpleBiDigraph,
+  SBD.newSizedMSimpleBiDigraph,
   -- *** Adapters
   EA.EdgeLabeledMGraph,
   EA.newEdgeLabeledGraph,
