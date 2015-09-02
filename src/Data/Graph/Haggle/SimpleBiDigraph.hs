@@ -21,8 +21,6 @@ import qualified Data.Vector as V
 import Data.Graph.Haggle.Classes
 import Data.Graph.Haggle.Internal.Basic
 
--- type EdgeID = Int
-
 data MSimpleBiDigraph m = -- See Note [Graph Representation]
   MBiDigraph { mgraphVertexCount :: R.Ref m Int
              , mgraphEdgeCount :: R.Ref m Int
