@@ -5,6 +5,7 @@
 -- This formulation does not support parallel edges.
 module Data.Graph.Haggle.PatriciaTree ( PatriciaTree ) where
 
+import Control.DeepSeq
 import Control.Monad ( guard )
 import Data.IntMap ( IntMap )
 import qualified Data.IntMap as IM
@@ -15,6 +16,10 @@ import qualified Data.Graph.Haggle.Classes as I
 import qualified Data.Graph.Haggle.Internal.Basic as I
 
 data Ctx nl el = Ctx !(IntMap el) I.Vertex nl !(IntMap el)
+
+instance (NFData nl, NFData el) => NFData (Ctx nl el) where
+  rnf (Ctx p v nl s) =
+    p `deepseq` s `deepseq` nl `deepseq` v `seq` ()
 
 -- | The 'PatriciaTree' is a graph implementing the 'I.InductiveGraph'
 -- interface (as well as the other immutable graph interfaces).  It is
@@ -28,6 +33,9 @@ data Ctx nl el = Ctx !(IntMap el) I.Vertex nl !(IntMap el)
 -- This graph type is most useful for incremental construction in pure
 -- code.  It also supports node removal from pure code.
 data PatriciaTree nl el = Gr { graphRepr :: IntMap (Ctx nl el) }
+
+instance (NFData nl, NFData el) => NFData (PatriciaTree nl el) where
+  rnf (Gr im) = im `deepseq` ()
 
 instance I.Graph (PatriciaTree nl el) where
   vertices = map I.V . IM.keys . graphRepr

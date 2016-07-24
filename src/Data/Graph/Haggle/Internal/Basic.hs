@@ -12,6 +12,7 @@ module Data.Graph.Haggle.Internal.Basic (
   edgeDest
   ) where
 
+import Control.DeepSeq
 import Data.Hashable
 
 -- | An abstract representation of a vertex.
@@ -24,6 +25,9 @@ newtype Vertex = V Int
 instance Hashable Vertex where
   hashWithSalt = hashVertex
 
+instance NFData Vertex where
+  rnf (V i) = i `seq` ()
+
 hashVertex :: Int -> Vertex -> Int
 hashVertex s (V i) = hashWithSalt s i
 {-# INLINE hashVertex #-}
@@ -34,6 +38,9 @@ data Edge = E {-# UNPACK #-}!Int {-# UNPACK #-}!Int {-# UNPACK #-}!Int
 
 instance Hashable Edge where
   hashWithSalt = hashEdge
+
+instance NFData Edge where
+  rnf e = e `seq` ()
 
 hashEdge :: Int -> Edge -> Int
 hashEdge s (E eid src dst) = s `hashWithSalt` eid `hashWithSalt` src `hashWithSalt` dst
