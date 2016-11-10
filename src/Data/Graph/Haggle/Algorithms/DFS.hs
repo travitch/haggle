@@ -45,8 +45,13 @@ module Data.Graph.Haggle.Algorithms.DFS (
 
 import Control.Monad ( filterM, foldM, liftM )
 import Control.Monad.ST
+import qualified Data.Foldable as F
+import Data.Monoid
+import qualified Data.Sequence as Seq
 import Data.Tree ( Tree )
 import qualified Data.Tree as T
+
+import Prelude
 
 import Data.Graph.Haggle
 import Data.Graph.Haggle.Classes ( maxVertexId )
@@ -178,7 +183,7 @@ isConnected = (==1) . noComponents
 
 -- | Topologically sort the graph; the input must be a DAG.
 topsort :: (Graph g) => g -> [Vertex]
-topsort g = reverse $ postflattenF $ dff g (vertices g)
+topsort g = reverse $ F.toList $ postflattenF $ dff g (vertices g)
 
 -- | Return a list of each /strongly-connected component/ in the graph.
 -- In a strongly-connected component, every vertex is reachable from every
@@ -201,8 +206,8 @@ preorder = T.flatten
 preorderF :: [Tree a] -> [a]
 preorderF = concatMap preorder
 
-postflatten :: Tree a -> [a]
-postflatten (T.Node v ts) = postflattenF ts ++ [v]
+postflatten :: Tree a -> Seq.Seq a
+postflatten (T.Node v ts) = postflattenF ts <> Seq.singleton v
 
-postflattenF :: [Tree a] -> [a]
-postflattenF = concatMap postflatten
+postflattenF :: [Tree a] -> Seq.Seq a
+postflattenF = F.foldMap postflatten
