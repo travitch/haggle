@@ -178,7 +178,6 @@ instance Graph Digraph where
     | otherwise =
       let root = UV.unsafeIndex (edgeRoots g) v
       in pureEdges g v root
-  edgeExists g v1 v2 = any (==v2) $ successors g v1
   maxVertexId g = UV.length (edgeRoots g) - 1
   isEmpty = (==0) . UV.length . edgeRoots
 

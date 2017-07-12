@@ -46,9 +46,9 @@ outEdges :: (I.Graph g) => VertexLabeledGraph g nl -> I.Vertex -> [I.Edge]
 outEdges (VLG lg) = I.outEdges lg
 {-# INLINE outEdges #-}
 
-edgeExists :: (I.Graph g) => VertexLabeledGraph g nl -> I.Vertex -> I.Vertex -> Bool
-edgeExists (VLG lg) = I.edgeExists lg
-{-# INLINE edgeExists #-}
+edgesBetween :: (I.Graph g) => VertexLabeledGraph g nl -> I.Vertex -> I.Vertex -> [I.Edge]
+edgesBetween (VLG lg) = I.edgesBetween lg
+{-# INLINE edgesBetween #-}
 
 maxVertexId :: (I.Graph g) => VertexLabeledGraph g nl -> Int
 maxVertexId = I.maxVertexId . unVLG
@@ -63,7 +63,7 @@ instance (I.Graph g) => I.Graph (VertexLabeledGraph g nl) where
   edges = edges
   successors = successors
   outEdges = outEdges
-  edgeExists = edgeExists
+  edgesBetween = edgesBetween
   maxVertexId = maxVertexId
   isEmpty = isEmpty
 

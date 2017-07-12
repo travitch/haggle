@@ -131,6 +131,7 @@ module Data.Graph.Haggle (
   edges,
   successors,
   outEdges,
+  edgesBetween,
   edgeExists,
   isEmpty,
   thaw,
@@ -298,6 +299,10 @@ successors = I.successors
 outEdges :: (I.Graph g) => g -> I.Vertex -> [I.Edge]
 outEdges = I.outEdges
 {-# INLINABLE outEdges #-}
+
+edgesBetween :: (I.Graph g) => g -> I.Vertex -> I.Vertex -> [I.Edge]
+edgesBetween = I.edgesBetween
+{-# INLINABLE edgesBetween #-}
 
 edgeExists :: (I.Graph g) => g -> I.Vertex -> I.Vertex -> Bool
 edgeExists = I.edgeExists

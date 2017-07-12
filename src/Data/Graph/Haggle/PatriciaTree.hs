@@ -7,6 +7,7 @@ module Data.Graph.Haggle.PatriciaTree ( PatriciaTree ) where
 
 import Control.DeepSeq
 import Control.Monad ( guard )
+import Data.Foldable ( toList )
 import Data.IntMap ( IntMap )
 import qualified Data.IntMap as IM
 import Data.Maybe ( fromMaybe )
@@ -43,9 +44,10 @@ instance I.Graph (PatriciaTree nl el) where
   maxVertexId (Gr g)
     | IM.null g = 0
     | otherwise = fst $ IM.findMax g
-  edgeExists (Gr g) (I.V src) (I.V dst) = fromMaybe False $ do
+  edgesBetween (Gr g) (I.V src) (I.V dst) = toList $ do
     Ctx _ _ _ ss <- IM.lookup src g
-    return $ IM.member dst ss
+    guard (IM.member dst ss)
+    return (I.E (-1) src dst)
   edges g = concatMap (I.outEdges g) (I.vertices g)
   successors (Gr g) (I.V v) = fromMaybe [] $ do
     Ctx _ _ _ ss <- IM.lookup v g
