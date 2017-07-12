@@ -13,6 +13,7 @@ module Data.Graph.Haggle.SimpleBiDigraph (
 import Control.Monad ( when )
 import qualified Control.Monad.Primitive as P
 import qualified Control.Monad.Ref as R
+import Data.Foldable ( toList )
 import Data.IntMap ( IntMap )
 import qualified Data.IntMap as IM
 import qualified Data.Vector.Mutable as MV
@@ -185,9 +186,9 @@ instance Graph SimpleBiDigraph where
     | otherwise =
       let succs = V.unsafeIndex (graphSuccs g) v
       in IM.elems succs
-  edgeExists g (V src) (V dst)
-    | outOfRange g src || outOfRange g dst = False
-    | otherwise = IM.member dst (V.unsafeIndex (graphSuccs g) src)
+  edgesBetween g (V src) (V dst)
+    | outOfRange g src || outOfRange g dst = []
+    | otherwise = toList $ IM.lookup dst (V.unsafeIndex (graphSuccs g) src)
   maxVertexId g = V.length (graphSuccs g) - 1
   isEmpty = (==0) . vertexCount
 

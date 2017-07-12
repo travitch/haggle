@@ -241,9 +241,9 @@ outEdges :: (I.Graph g) => LabeledGraph g nl el -> I.Vertex -> [I.Edge]
 outEdges lg = I.outEdges (rawGraph lg)
 {-# INLINE outEdges #-}
 
-edgeExists :: (I.Graph g) => LabeledGraph g nl el -> I.Vertex -> I.Vertex -> Bool
-edgeExists lg = I.edgeExists (rawGraph lg)
-{-# INLINE edgeExists #-}
+edgesBetween :: (I.Graph g) => LabeledGraph g nl el -> I.Vertex -> I.Vertex -> [I.Edge]
+edgesBetween lg = I.edgesBetween (rawGraph lg)
+{-# INLINE edgesBetween #-}
 
 maxVertexId :: (I.Graph g) => LabeledGraph g nl el -> Int
 maxVertexId = I.maxVertexId . rawGraph
@@ -276,7 +276,7 @@ instance (I.Graph g) => I.Graph (LabeledGraph g nl el) where
   edges = edges
   successors = successors
   outEdges = outEdges
-  edgeExists = edgeExists
+  edgesBetween = edgesBetween
   maxVertexId = maxVertexId
   isEmpty = isEmpty
 

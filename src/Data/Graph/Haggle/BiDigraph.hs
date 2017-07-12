@@ -204,9 +204,9 @@ instance Graph BiDigraph where
     | otherwise =
       let succs = V.unsafeIndex (graphSuccs g) v
       in concat (IM.elems succs)
-  edgeExists g (V src) (V dst)
-    | outOfRange g src || outOfRange g dst = False
-    | otherwise = IM.member dst (V.unsafeIndex (graphSuccs g) src)
+  edgesBetween g (V src) (V dst)
+    | outOfRange g src || outOfRange g dst = []
+    | otherwise = IM.findWithDefault [] dst (V.unsafeIndex (graphSuccs g) src)
   maxVertexId g = V.length (graphSuccs g) - 1
   isEmpty = (==0) . vertexCount
 

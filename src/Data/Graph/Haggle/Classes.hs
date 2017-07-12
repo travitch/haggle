@@ -16,6 +16,7 @@ module Data.Graph.Haggle.Classes (
   MLabeledVertex(..),
   -- * Immutable Graphs
   Graph(..),
+  edgeExists,
   Thawable(..),
   Bidirectional(..),
   HasEdgeLabel(..),
@@ -116,9 +117,16 @@ class Graph g where
   edges :: g -> [Edge]
   successors :: g -> Vertex -> [Vertex]
   outEdges :: g -> Vertex -> [Edge]
-  edgeExists :: g -> Vertex -> Vertex -> Bool
   maxVertexId :: g -> Int
   isEmpty :: g -> Bool
+  -- | This has a default implementation in terms of 'outEdges', but is part
+  -- of the class so that instances can offer a more efficient implementation
+  -- when possible.
+  edgesBetween :: g -> Vertex -> Vertex -> [Edge]
+  edgesBetween g src dst = filter ((dst ==) . edgeDest) (outEdges g src)
+
+edgeExists :: Graph g => g -> Vertex -> Vertex -> Bool
+edgeExists g v1 v2 = not . null $ edgesBetween g v1 v2
 
 class (Graph g) => Thawable g where
   type MutableGraph g :: (* -> *) -> *
