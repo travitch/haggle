@@ -55,7 +55,7 @@ test-suite GraphTests
   main-is: GraphTests.hs
   hs-source-dirs: tests
   ghc-options: -Wall
-  build-depends: haggle == 0.1.0.0,
+  build-depends: haggle,
                  base >= 4.5,
                  containers,
                  fgl,
