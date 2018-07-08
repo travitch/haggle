@@ -22,6 +22,7 @@ module Data.Graph.Haggle.VertexMap (
   vertexForLabelRef,
   vertexMapFromRef ) where
 
+import qualified Control.DeepSeq as DS
 import Control.Monad ( liftM )
 import qualified Control.Monad.Primitive as P
 import qualified Control.Monad.Ref as R
@@ -33,6 +34,9 @@ import Data.Graph.Haggle.Classes
 
 -- | A simple mapping from labels to their 'Vertex'
 newtype VertexMap nl = VM (Map nl Vertex)
+
+instance (DS.NFData nl) => DS.NFData (VertexMap nl) where
+  rnf (VM m) = m `DS.deepseq` ()
 
 emptyVertexMap :: VertexMap nl
 emptyVertexMap = VM M.empty

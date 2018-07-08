@@ -23,6 +23,7 @@ module Data.Graph.Haggle.Internal.Adapter (
   unsafeGetEdgeLabel
   ) where
 
+import qualified Control.DeepSeq as DS
 import Control.Monad ( liftM )
 import qualified Control.Monad.Primitive as P
 import qualified Control.Monad.Ref as R
@@ -49,6 +50,9 @@ data LabeledGraph g nl el =
      , nodeLabelStore :: Vector nl
      , edgeLabelStore :: Vector el
      }
+
+instance (DS.NFData g, DS.NFData nl, DS.NFData el) => DS.NFData (LabeledGraph g nl el) where
+  rnf gr = rawGraph gr `DS.deepseq` nodeLabelStore gr `DS.deepseq` edgeLabelStore gr `DS.deepseq` ()
 
 newLabeledGraph :: (I.MGraph g, P.PrimMonad m, R.MonadRef m)
                 => m (g m)

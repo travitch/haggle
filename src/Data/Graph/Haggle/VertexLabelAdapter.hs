@@ -15,6 +15,7 @@ module Data.Graph.Haggle.VertexLabelAdapter (
   fromEdgeList
   ) where
 
+import qualified Control.DeepSeq as DS
 import qualified Control.Monad.Primitive as P
 import qualified Control.Monad.Ref as R
 import Control.Monad.ST ( ST, runST )
@@ -25,6 +26,9 @@ import qualified Data.Graph.Haggle.Internal.Adapter as A
 
 newtype VertexLabeledMGraph g nl m = VLMG { unVLMG :: A.LabeledMGraph g nl () m }
 newtype VertexLabeledGraph g nl = VLG { unVLG :: A.LabeledGraph g nl () }
+
+instance (DS.NFData g, DS.NFData nl) => DS.NFData (VertexLabeledGraph g nl) where
+  rnf (VLG g) = g `DS.deepseq` ()
 
 mapVertexLabel :: VertexLabeledGraph g nl -> (nl -> nl') -> VertexLabeledGraph g nl'
 mapVertexLabel g = VLG . A.mapVertexLabel (unVLG g)

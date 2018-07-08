@@ -11,6 +11,7 @@ module Data.Graph.Haggle.EdgeLabelAdapter (
   mapEdgeLabel
   ) where
 
+import qualified Control.DeepSeq as DS
 import qualified Control.Monad.Primitive as P
 import qualified Control.Monad.Ref as R
 import qualified Data.Graph.Haggle.Classes as I
@@ -18,6 +19,9 @@ import qualified Data.Graph.Haggle.Internal.Adapter as A
 
 newtype EdgeLabeledMGraph g el s = ELMG { unELMG :: A.LabeledMGraph g () el s }
 newtype EdgeLabeledGraph g el = ELG { unELG :: A.LabeledGraph g () el }
+
+instance (DS.NFData g, DS.NFData el) => DS.NFData (EdgeLabeledGraph g el) where
+  rnf (ELG g) = g `DS.deepseq` ()
 
 mapEdgeLabel :: EdgeLabeledGraph g el -> (el -> el') -> EdgeLabeledGraph g el'
 mapEdgeLabel g = ELG . A.mapEdgeLabel (unELG g)

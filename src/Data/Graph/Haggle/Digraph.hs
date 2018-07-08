@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE TypeFamilies #-}
 -- | This graph implementation is a directed (multi-)graph that only tracks
 -- successors.  This encoding is very compact.  It is a multi-graph because it
@@ -20,6 +21,7 @@ module Data.Graph.Haggle.Digraph (
   newSizedMDigraph
   ) where
 
+import qualified Control.DeepSeq as DS
 import Control.Monad ( when )
 import qualified Control.Monad.Primitive as P
 import qualified Control.Monad.Ref as R
@@ -39,10 +41,14 @@ data MDigraph m = -- See Note [Graph Representation]
            }
 
 data Digraph =
-  Digraph { edgeRoots :: UV.Vector Int
-          , edgeTargets :: UV.Vector Int
-          , edgeNexts :: UV.Vector Int
+  Digraph { edgeRoots :: !(UV.Vector Int)
+          , edgeTargets :: !(UV.Vector Int)
+          , edgeNexts :: !(UV.Vector Int)
           }
+
+-- | The 'Digraph' is always in normal form, as the vectors are all unboxed
+instance DS.NFData Digraph where
+  rnf !_g = ()
 
 defaultSize :: Int
 defaultSize = 128

@@ -10,6 +10,7 @@ module Data.Graph.Haggle.SimpleBiDigraph (
   newSizedMSimpleBiDigraph
   ) where
 
+import qualified Control.DeepSeq as DS
 import Control.Monad ( when )
 import qualified Control.Monad.Primitive as P
 import qualified Control.Monad.Ref as R
@@ -35,6 +36,9 @@ data SimpleBiDigraph =
             , graphPreds :: V.Vector (IntMap Edge)
             , graphSuccs :: V.Vector (IntMap Edge)
             }
+
+instance DS.NFData SimpleBiDigraph where
+  rnf bdg = graphPreds bdg `DS.deepseq` graphSuccs bdg `DS.deepseq` ()
 
 defaultSize :: Int
 defaultSize = 128
