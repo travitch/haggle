@@ -94,8 +94,9 @@ class (MGraph g) => MLabeledVertex g where
   getLabeledVertices g = do
     vs <- getVertices g
     forM vs $ \v -> do
-      Just l <- getVertexLabel g v
-      return (v, l)
+      ml <- getVertexLabel g v
+      case ml of
+        Just l -> return (v, l)
 
 -- | An interface for graphs that allow vertex and edge removal.  Note that
 -- implementations are not required to reclaim storage from removed
