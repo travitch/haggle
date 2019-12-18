@@ -97,6 +97,7 @@ class (MGraph g) => MLabeledVertex g where
       ml <- getVertexLabel g v
       case ml of
         Just l -> return (v, l)
+        Nothing -> error ("impossible (missing label for vertex" ++ show v ++ ")")
 
 -- | An interface for graphs that allow vertex and edge removal.  Note that
 -- implementations are not required to reclaim storage from removed
