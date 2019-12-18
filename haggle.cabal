@@ -15,7 +15,7 @@ description: This graph library provides both mutable and immutable graphs.
 license: BSD3
 license-file: LICENSE
 author: Tristan Ravitch
-maintainer: tristan@nochair.net
+maintainer: tristan@ravit.ch
 category: Data
 build-type: Simple
 cabal-version: >=1.10
