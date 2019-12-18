@@ -1,17 +1,12 @@
 name: haggle
 version: 0.1.0.0
 synopsis: A graph library offering mutable, immutable, and inductive graphs
-description: This graph library provides both mutable and immutable graphs.
-             Graphs are constructed in IO or ST via mutation and then
-             /frozen/ into immutable graphs.
+description: This library provides mutable (in ST or IO), immutable, and inductive graphs.
+             There are multiple graphs implementations provided to support different use
+             cases and time/space tradeoffs.  It is a design goal of haggle to be flexible
+             and allow users to "pay as they go".  Node and edge labels are optional.  Haggle
+             also aims to be safer than fgl: there are no partial functions in the API.
 
-             Algorithms (for the most part) work over immutable graphs.
-
-             This differs from FGL, which has only inductive graphs.  Those
-             graphs offer an immutable API where a new graph is constructed
-             when nodes are added or removed.  The approach taken in this
-             library allows for much more compact graphs than are possible
-             while supporting the FGL API.
 license: BSD3
 license-file: LICENSE
 author: Tristan Ravitch
