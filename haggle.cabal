@@ -1,6 +1,6 @@
 name: haggle
 version: 0.1.0.0
-synopsis: A Haskell graph library offering mutable and immutable graphs
+synopsis: A graph library offering mutable, immutable, and inductive graphs
 description: This graph library provides both mutable and immutable graphs.
              Graphs are constructed in IO or ST via mutation and then
              /frozen/ into immutable graphs.
