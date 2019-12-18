@@ -13,6 +13,8 @@ import qualified Data.IntMap as IM
 import Data.Maybe ( fromMaybe )
 import Data.Monoid
 
+import           Prelude
+
 import qualified Data.Graph.Haggle.Classes as I
 import qualified Data.Graph.Haggle.Internal.Basic as I
 
