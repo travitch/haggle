@@ -36,10 +36,10 @@ library
                    Data.Graph.Haggle.EdgeLabelAdapter,
                    Data.Graph.Haggle.VertexMap,
                    Data.Graph.Haggle.Algorithms.DFS,
-                   Data.Graph.Haggle.Algorithms.Dominators,
-                   Data.Graph.Haggle.Internal.Basic,
-                   Data.Graph.Haggle.Internal.BitSet
-  other-modules: Data.Graph.Haggle.Internal.Adapter
+                   Data.Graph.Haggle.Algorithms.Dominators
+  other-modules: Data.Graph.Haggle.Internal.Adapter,
+                 Data.Graph.Haggle.Internal.Basic,
+                 Data.Graph.Haggle.Internal.BitSet
   build-depends: base >= 4.5 && < 5,
                  ref-tf >= 0.4 && < 0.5,
                  vector >= 0.9 && < 0.13,
