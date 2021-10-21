@@ -7,14 +7,18 @@
 -- return the same results.
 module Main ( main ) where
 
-import Test.Framework ( defaultMain, testGroup, Test )
+import Test.Framework ( defaultMain, Test )
 import Test.Framework.Providers.QuickCheck2 ( testProperty )
+import Test.Framework.Providers.HUnit ( hUnitTestToTests )
+import Test.HUnit
 import Test.QuickCheck
 
 import Control.Arrow ( first, second )
+import qualified Data.Bifunctor as Bi
 import Control.Monad ( replicateM )
 import qualified Data.Foldable as F
-import Data.Maybe ( isNothing )
+import qualified Data.List as L
+import Data.Maybe ( fromJust, isNothing )
 import qualified Data.Set as S
 
 import qualified Data.Graph.Inductive as FGL
@@ -62,7 +66,7 @@ mkGraphPair sz = do
 main :: IO ()
 main = defaultMain tests
 
-tests :: [Test]
+tests :: [Test.Framework.Test]
 tests = [ testProperty "prop_sameVertexCount" prop_sameVertexCount
         , testProperty "prop_sameEdgeCount" prop_sameEdgeCount
         , testProperty "prop_sameSuccessorsAtLabel" prop_sameSuccessorsAtLabel
@@ -72,7 +76,7 @@ tests = [ testProperty "prop_sameVertexCount" prop_sameVertexCount
         , testProperty "prop_sameNoComponents" prop_sameNoComponents
         , testProperty "prop_immDominatorsSame" prop_immDominatorsSame
         , testProperty "prop_dominatorsSame" prop_dominatorsSame
-        ]
+        ] <>  testPatricia
 
 prop_sameVertexCount :: GraphPair -> Bool
 prop_sameVertexCount (GP _ bg tg) =
@@ -153,3 +157,41 @@ vertexFromLabel g lbl = F.find labelMatch (HGL.vertices g)
 
 unique :: (Ord a) => [a] -> [a]
 unique = S.toList . S.fromList
+
+----------------------------------------------------------------------
+
+-- Explicit tests for various functionality
+
+testPatricia :: [Test.Framework.Test]
+testPatricia =
+  let gr0 = foldl (\g -> snd . HGL.insertLabeledVertex g)
+                 (HGL.emptyGraph :: HGL.PatriciaTree Int Char)
+                 [1,2,4,3,5,0]
+      vs = fst <$> HGL.labeledVertices gr0
+      gr1 = foldl (\g (f,t,l) ->
+                     snd $ fromJust $ HGL.insertLabeledEdge g f t l)
+            gr0
+            [ (vs !! 1, vs !! 2, 'a')
+            , (vs !! 0, vs !! 2, 'b')
+            , (vs !! 1, vs !! 5, 'c')
+            ]
+  in hUnitTestToTests $ test
+     [ "create graph" ~:
+       do sum (snd <$> HGL.labeledVertices gr1) @?= 15
+          L.sort (snd <$> HGL.labeledEdges gr1) @?= "abc"
+
+     , "bifunctor first (nodes)" ~:
+       do let gr2 = Bi.first (+3) gr1
+          sum (snd <$> HGL.labeledVertices gr2) @?= 33
+          L.sort (snd <$> HGL.labeledEdges gr2) @?= "abc"
+
+     , "bifunctor second (edges)" ~:
+       do let gr2 = Bi.second (succ . succ . succ) gr1
+          sum (snd <$> HGL.labeledVertices gr2) @?= 15
+          L.sort (snd <$> HGL.labeledEdges gr2) @?= "def"
+
+     , "bifunctor bimap" ~:
+       do let gr2 = Bi.bimap (+2) (succ . succ) gr1
+          sum (snd <$> HGL.labeledVertices gr2) @?= 27
+          L.sort (snd <$> HGL.labeledEdges gr2) @?= "cde"
+     ]
