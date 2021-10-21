@@ -5,13 +5,14 @@
 -- This formulation does not support parallel edges.
 module Data.Graph.Haggle.PatriciaTree ( PatriciaTree ) where
 
-import Control.DeepSeq
-import Control.Monad ( guard )
-import Data.Foldable ( toList )
-import Data.IntMap ( IntMap )
+import           Control.DeepSeq
+import           Control.Monad ( guard )
+import           Data.Bifunctor
+import           Data.Foldable ( toList )
+import           Data.IntMap ( IntMap )
 import qualified Data.IntMap as IM
-import Data.Maybe ( fromMaybe )
-import Data.Monoid
+import           Data.Maybe ( fromMaybe )
+import           Data.Monoid
 
 import           Prelude
 
@@ -39,6 +40,14 @@ data PatriciaTree nl el = Gr { graphRepr :: IntMap (Ctx nl el) }
 
 instance (NFData nl, NFData el) => NFData (PatriciaTree nl el) where
   rnf (Gr im) = im `deepseq` ()
+
+instance Bifunctor PatriciaTree where
+  first f (Gr im) =
+    let onNode (Ctx inM v n outM) = Ctx inM v (f n) outM
+    in Gr $ fmap onNode im
+  second f (Gr im) =
+    let onEdge (Ctx inM v n outM) = Ctx (f <$> inM) v n (f <$> outM)
+    in Gr $ fmap onEdge im
 
 instance I.Graph (PatriciaTree nl el) where
   vertices = map I.V . IM.keys . graphRepr
