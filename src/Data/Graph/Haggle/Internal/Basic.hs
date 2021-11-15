@@ -1,3 +1,5 @@
+{-# LANGUAGE MultiParamTypeClasses, TemplateHaskell, TypeFamilies #-}
+
 -- | This module defines the most basic types in the library.  Their
 -- representations are required in several modules, but external
 -- clients should probably not rely on them.
@@ -14,6 +16,7 @@ module Data.Graph.Haggle.Internal.Basic (
 
 import Control.DeepSeq
 import Data.Hashable
+import Data.Vector.Unboxed.Deriving (derivingUnbox)
 
 -- | An abstract representation of a vertex.
 --
@@ -21,6 +24,11 @@ import Data.Hashable
 -- this, as it is subject to change.
 newtype Vertex = V Int
   deriving (Eq, Ord, Show)
+
+$(derivingUnbox "Vertex"
+  [t| Vertex -> Int |]
+  [| \(V i) -> i |]
+  [| V |])
 
 instance Hashable Vertex where
   hashWithSalt = hashVertex
@@ -35,6 +43,11 @@ hashVertex s (V i) = hashWithSalt s i
 -- | An edge between two vertices.
 data Edge = E {-# UNPACK #-}!Int {-# UNPACK #-}!Int {-# UNPACK #-}!Int
   deriving (Eq, Ord, Show)
+
+$(derivingUnbox "Edge"
+  [t| Edge -> (Int, Int, Int) |]
+  [| \(E eid src dst) -> (eid, src, dst) |]
+  [| \(eid, src, dst) -> E eid src dst |])
 
 instance Hashable Edge where
   hashWithSalt = hashEdge
