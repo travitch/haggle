@@ -55,7 +55,6 @@ import Prelude
 
 import Data.Graph.Haggle
 import Data.Graph.Haggle.Classes ( maxVertexId )
-import Data.Graph.Haggle.Internal.Basic
 import Data.Graph.Haggle.Internal.BitSet
 
 -- | The most general DFS
