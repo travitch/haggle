@@ -89,7 +89,7 @@ module Data.Graph.Haggle (
   -- ** Inductive graphs
   PT.PatriciaTree,
   -- * Basic types
-  I.Vertex,
+  I.Vertex, I.vertexId,
   I.Edge,
   I.edgeSource,
   I.edgeDest,

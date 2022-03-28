@@ -2,7 +2,7 @@
 {-# LANGUAGE TypeFamilies #-}
 module Data.Graph.Haggle.Classes (
   -- * Basic Types
-  Vertex,
+  Vertex, vertexId,
   Edge,
   edgeSource,
   edgeDest,
