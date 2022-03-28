@@ -137,10 +137,9 @@ instance MAddVertex MBiDigraph where
 
 
 instance MAddEdge MBiDigraph where
-  addEdge g v1@(V src) v2@(V dst) = do
+  addEdge g (V src) (V dst) = do
     nVerts <- R.readRef (mgraphVertexCount g)
-    exists <- checkEdgeExists g v1 v2
-    case exists || src >= nVerts || dst >= nVerts of
+    case src >= nVerts || dst >= nVerts of
       True -> return Nothing
       False -> do
         eid <- R.readRef (mgraphEdgeIdSrc g)
