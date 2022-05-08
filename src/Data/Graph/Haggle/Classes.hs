@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE TypeFamilies #-}
 module Data.Graph.Haggle.Classes (
@@ -28,11 +29,15 @@ module Data.Graph.Haggle.Classes (
   ) where
 
 
-import Control.Monad ( forM, liftM )
+import           Control.Monad ( forM, liftM )
 import qualified Control.Monad.Primitive as P
 import qualified Control.Monad.Ref as R
-import Data.Maybe ( fromMaybe )
-import Data.Graph.Haggle.Internal.Basic
+#if MIN_VERSION_base(4, 9, 0)
+import           Data.Kind ( Type )
+#endif
+import           Data.Maybe ( fromMaybe )
+
+import           Data.Graph.Haggle.Internal.Basic
 
 -- | The interface supported by a mutable graph.
 class MGraph g where
@@ -131,7 +136,11 @@ edgeExists :: Graph g => g -> Vertex -> Vertex -> Bool
 edgeExists g v1 v2 = not . null $ edgesBetween g v1 v2
 
 class (Graph g) => Thawable g where
+#if MIN_VERSION_base(4, 9, 0)
+  type MutableGraph g :: (Type -> Type) -> Type
+#else
   type MutableGraph g :: (* -> *) -> *
+#endif
   thaw :: (P.PrimMonad m, R.MonadRef m) => g -> m (MutableGraph g m)
 
 -- | The interface for immutable graphs with efficient access to
