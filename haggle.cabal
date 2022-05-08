@@ -7,6 +7,8 @@ description: This library provides mutable (in ST or IO), immutable, and inducti
              and allow users to "pay as they go".  Node and edge labels are optional.  Haggle
              also aims to be safer than fgl: there are no partial functions in the API.
 
+homepage:            https://github.com/travitch/haggle
+bug-reports:         https://github.com/travitch/haggle/issues
 license: BSD3
 license-file: LICENSE
 author: Tristan Ravitch
