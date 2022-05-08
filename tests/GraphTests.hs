@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 -- | This module tests Haggle by comparing its results to those of FGL.
 -- This assumes that FGL is reasonably correct.
 --
@@ -20,6 +21,10 @@ import qualified Data.Foldable as F
 import qualified Data.List as L
 import Data.Maybe ( fromJust, isNothing )
 import qualified Data.Set as S
+#if MIN_VERSION_base(4, 11, 0)
+#else
+import           Data.Monoid ( (<>) )
+#endif
 
 import qualified Data.Graph.Inductive as FGL
 import qualified Data.Graph.Haggle as HGL
