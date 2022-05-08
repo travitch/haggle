@@ -1,5 +1,5 @@
 # Overview
-![travis-ci status](https://travis-ci.org/travitch/haggle.svg?branch=master)
+![Github Actions status](https://github.com/travitch/haggle/actions/workflows/haskell-ci.yml/badge.svg)
 
 Haggle is a graph library for Haskell.  It aims to support large graphs
 efficiently and compactly.  It differs from
