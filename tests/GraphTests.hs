@@ -82,6 +82,7 @@ tests = [ testProperty "prop_sameVertexCount" prop_sameVertexCount
         , testProperty "prop_immDominatorsSame" prop_immDominatorsSame
         , testProperty "prop_dominatorsSame" prop_dominatorsSame
         ] <>  testPatricia
+        <> testDomIndependentSubgraphs
 
 prop_sameVertexCount :: GraphPair -> Bool
 prop_sameVertexCount (GP _ bg tg) =
@@ -166,6 +167,35 @@ unique = S.toList . S.fromList
 ----------------------------------------------------------------------
 
 -- Explicit tests for various functionality
+
+testDomIndependentSubgraphs :: [Test.Framework.Test]
+testDomIndependentSubgraphs =
+  let gr0 = foldl (\g -> snd . HGL.insertLabeledVertex g)
+            (HGL.emptyGraph :: HGL.PatriciaTree Int Char)
+            [1,2,4]
+      vs = fst <$> HGL.labeledVertices gr0
+      gr1 = snd $ fromJust $ HGL.insertLabeledEdge gr0 (vs !! 0) (vs !! 1) 'h'
+      -- gr1 has three nodes, two are connected, one is not connected (i.e. two
+      -- independent subgraphs)
+
+  in hUnitTestToTests $ test
+     [ "haggle reachable from 0th node" ~:
+       do HGL.reachable (vs !! 0) gr1 @?= [ (vs !! 0)
+                                          , (vs !! 1)
+                                          ]
+     , "haggle dominator for 0th node" ~:
+       do HGL.dominators gr1 (vs !! 0) @?= [ (vs !! 0, [ (vs !! 0) ])
+                                           , (vs !! 1, [ (vs !! 1), (vs !! 0) ])
+                                           ]
+     -- n.b. fgl's dominator is broken (as haggle's original version also was) in
+     -- that its return includes (3, [1,2,3]), which is invalid: 3 is in an
+     -- independent subgraph and cannot be dominated by 1.
+     -- , "fgl dominator for 0th node" ~:
+     --   do let fgr0 = FGL.mkGraph [(1,1), (2,2), (3,3)] [(0, 1, 'f')] :: FGL.Gr Int Char
+     --      FGL.dom fgr0 1 @?= [ (1, [ 1 ])
+     --                         , (2, [ 1, 2 ])
+     --                         ]
+     ]
 
 testPatricia :: [Test.Framework.Test]
 testPatricia =
