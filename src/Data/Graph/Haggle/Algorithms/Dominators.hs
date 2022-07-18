@@ -61,7 +61,7 @@ dominators g root = fromMaybe [] $ do
   (res, toNode, fromNode) <- domWork g root
   let dom' = getDom toNode res
       rest = M.keys (M.filter (-1 ==) fromNode)
-      verts = vertices g
+      verts = reachable root g
   return $ [(toNode ! i, dom' ! i) | i <- [0..V.length dom' - 1]] ++
            [(n, verts) | n <- rest]
 
@@ -70,6 +70,7 @@ domWork g root
   | null trees = Nothing
   | otherwise = return (idom, toNode, fromNode)
   where
+    vlist = reachable root g
     -- Build up a depth-first tree from the root as a first approximation
     trees@(~[tree]) = dff g [root]
     (s, ntree) = numberTree 0 tree
@@ -83,7 +84,7 @@ domWork g root
     -- are the rest of the nodes in the graph, mapped to -1 (since they aren't
     -- going to be in the result)
     treeNodes = M.fromList $ zip (T.flatten tree) (T.flatten ntree)
-    otherNodes = M.fromList $ zip (vertices g) (repeat (-1))
+    otherNodes = M.fromList $ zip vlist (repeat (-1))
     fromNode = M.unionWith const treeNodes otherNodes
     -- Translate from internal nodes back to graph nodes (only need the nodes
     -- in the depth-first tree)
@@ -93,7 +94,7 @@ domWork g root
     -- Use a pre-pass over the graph to collect predecessors so that we don't
     -- require a Bidirectional graph.  We need a linear pass over the graph
     -- here anyway, so we don't lose anything.
-    predMap = fmap S.toList $ foldr (toPredecessor g) M.empty (vertices g)
+    predMap = fmap S.toList $ foldr (toPredecessor g) M.empty vlist
     preds = V.fromList $ [0] : [filter (/= -1) (map (fromNode M.!) (predMap M.! (toNode ! i)))
                                | i <- [1..s-1]]
     idom = fixEq (refineIDom preds) idom0
