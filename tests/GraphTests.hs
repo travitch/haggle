@@ -1,4 +1,6 @@
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE TypeFamilies #-}
+
 -- | This module tests Haggle by comparing its results to those of FGL.
 -- This assumes that FGL is reasonably correct.
 --
@@ -6,6 +8,7 @@
 -- then constructs equivalent FGL and Haggle graphs.  The quickcheck
 -- properties for each operation try to ensure that the two implementations
 -- return the same results.
+
 module Main ( main ) where
 
 import Test.Framework ( defaultMain, Test )
@@ -80,9 +83,14 @@ tests = [ testProperty "prop_sameVertexCount" prop_sameVertexCount
         , testProperty "prop_sameComponents" prop_sameComponents
         , testProperty "prop_sameNoComponents" prop_sameNoComponents
         , testProperty "prop_immDominatorsSame" prop_immDominatorsSame
-        , testProperty "prop_dominatorsSame" prop_dominatorsSame
+
+        -- 2022.07.18 KWQ: turns out that FGL is not so great of an oracle for
+        -- checking dominators (see https://github.com/haskell/fgl/pull/102, and
+        -- testExplicit below), so these tests are disabled until this can be
+        -- resolved.
+        -- , testProperty "prop_dominatorsSame" prop_dominatorsSame
         ] <>  testPatricia
-        <> testDomIndependentSubgraphs
+        <> testExplicit
 
 prop_sameVertexCount :: GraphPair -> Bool
 prop_sameVertexCount (GP _ bg tg) =
@@ -168,33 +176,59 @@ unique = S.toList . S.fromList
 
 -- Explicit tests for various functionality
 
-testDomIndependentSubgraphs :: [Test.Framework.Test]
-testDomIndependentSubgraphs =
+testExplicit :: [Test.Framework.Test]
+testExplicit =
   let gr0 = foldl (\g -> snd . HGL.insertLabeledVertex g)
             (HGL.emptyGraph :: HGL.PatriciaTree Int Char)
             [1,2,4]
       vs = fst <$> HGL.labeledVertices gr0
-      gr1 = snd $ fromJust $ HGL.insertLabeledEdge gr0 (vs !! 0) (vs !! 1) 'h'
+
+      plusEdge g f t = snd $ fromJust $ HGL.insertLabeledEdge g f t 'a'
+
+      gr1 = plusEdge gr0 (vs !! 0) (vs !! 1)
       -- gr1 has three nodes, two are connected, one is not connected (i.e. two
       -- independent subgraphs)
 
+      gr2 = plusEdge (plusEdge gr0 (vs !! 1) (vs !! 0)) (vs !! 1) (vs !! 1)
+
+
   in hUnitTestToTests $ test
-     [ "haggle reachable from 0th node" ~:
+     [ "haggle (patricia) [1-2,4] reachable from 1" ~:
        do HGL.reachable (vs !! 0) gr1 @?= [ (vs !! 0)
                                           , (vs !! 1)
                                           ]
-     , "haggle dominator for 0th node" ~:
+     , "haggle (patricia) [1-2,4] reachable from 2" ~:
+       do HGL.reachable (vs !! 1) gr1 @?= [ (vs !! 1)
+                                          ]
+     , "haggle (patricia) [2-1,2-2] reachable from 1" ~:
+       do HGL.reachable (vs !! 0) gr2 @?= [ (vs !! 0)
+                                          ]
+
+     , "haggle dominator [1-2,4] from 1" ~:
        do HGL.dominators gr1 (vs !! 0) @?= [ (vs !! 0, [ (vs !! 0) ])
                                            , (vs !! 1, [ (vs !! 1), (vs !! 0) ])
                                            ]
+
+     , "haggle dominator [2-1,2-2,4] from 1" ~:
+       do HGL.dominators gr2 (vs !! 0) @?= [ (vs !! 0, [ (vs !! 0) ])
+                                           ]
+
      -- n.b. fgl's dominator is broken (as haggle's original version also was) in
-     -- that its return includes (3, [1,2,3]), which is invalid: 3 is in an
+     -- that its return includes (4, [1,2,4]), which is invalid: 4 is in an
      -- independent subgraph and cannot be dominated by 1.
-     -- , "fgl dominator for 0th node" ~:
-     --   do let fgr0 = FGL.mkGraph [(1,1), (2,2), (3,3)] [(0, 1, 'f')] :: FGL.Gr Int Char
+     -- , "fgl dominator for [1-2,4] from 1" ~:
+     --   do let fgr0 = FGL.mkGraph [(1,1), (2,2), (4,4)] [(0, 1, 'f')] :: FGL.Gr Int Char
      --      FGL.dom fgr0 1 @?= [ (1, [ 1 ])
      --                         , (2, [ 1, 2 ])
      --                         ]
+
+     -- n.b. fgl's dominator is also broken in regards to reachability.  For a
+     -- dom return for [2-1, 2-2] from 1 also returns (2, [1,2]) which is
+     -- invalid, because 2 is not reachable from 1 and so 1 cannot be a dominator
+     -- for 2
+     -- , "fgl dominator for [2-1,2-2] from 1" ~:
+     --   do let fgr2 = FGL.mkGraph [(1,1), (2,2)] [(2,1,'f'), (2,2,'s')] :: FGL.Gr Int Char
+     --      FGL.dom fgr2 1 @?= [ (1, [ 1 ]) ]
      ]
 
 testPatricia :: [Test.Framework.Test]
