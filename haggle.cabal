@@ -1,5 +1,5 @@
 name: haggle
-version: 0.2
+version: 0.2.0.0.99
 synopsis: A graph library offering mutable, immutable, and inductive graphs
 description: This library provides mutable (in ST or IO), immutable, and inductive graphs.
              There are multiple graphs implementations provided to support different use
