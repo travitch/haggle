@@ -213,6 +213,15 @@ testExplicit =
        do HGL.dominators gr2 (vs !! 0) @?= [ (vs !! 0, [ (vs !! 0) ])
                                            ]
 
+     , "haggle add self-edge" ~:
+       do let Just (e,g) = HGL.insertLabeledEdge gr0 (vs!!0) (vs!!0) 's'
+          HGL.edges g @?= [e]
+
+     , "haggle delete self-edge" ~:
+       do let Just (_,g) = HGL.insertLabeledEdge gr0 (vs!!0) (vs!!0) 's'
+          HGL.edges (HGL.deleteEdgesBetween g (vs!!0) (vs!!0)) @?= []
+
+
      -- n.b. fgl's dominator is broken (as haggle's original version also was) in
      -- that its return includes (4, [1,2,4]), which is invalid: 4 is in an
      -- independent subgraph and cannot be dominated by 1.
