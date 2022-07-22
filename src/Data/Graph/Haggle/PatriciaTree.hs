@@ -120,6 +120,14 @@ instance I.InductiveGraph (PatriciaTree nl el) where
         v = I.V vid
         g' = IM.insert vid (Ctx mempty v lab mempty) g
     in (v, Gr g')
+  insertLabeledEdge gr@(Gr g) v1@(I.V src) (I.V dst) lab | src == dst = do
+    guard (IM.member src g)
+    guard (not (I.edgeExists gr v1 v1))
+    let e = I.E (-1) src src
+    Ctx spp sv sl sss <- IM.lookup src g
+    let ctx' = Ctx (IM.insert src lab spp) sv sl (IM.insert dst lab sss)
+        !g' = IM.insert src ctx' g
+    return (e, Gr g')
   insertLabeledEdge gr@(Gr g) v1@(I.V src) v2@(I.V dst) lab = do
     guard (IM.member src g && IM.member dst g)
     guard (not (I.edgeExists gr v1 v2))
@@ -132,6 +140,11 @@ instance I.InductiveGraph (PatriciaTree nl el) where
         !g'' = IM.insert dst dctx' g'
     return (e, Gr g'')
   deleteEdge g (I.E _ s d) = I.deleteEdgesBetween g (I.V s) (I.V d)
+  deleteEdgesBetween gr@(Gr g) (I.V src) (I.V dst) | src == dst = fromMaybe gr $ do
+    Ctx spp sv sl sss <- IM.lookup src g
+    let ctx' = Ctx (IM.delete src spp) sv sl (IM.delete src sss)
+        !g' = IM.insert src ctx' g
+    return (Gr g')
   deleteEdgesBetween gr@(Gr g) (I.V src) (I.V dst) = fromMaybe gr $ do
     Ctx spp sv sl sss <- IM.lookup src g
     Ctx dpp dv dl dss <- IM.lookup dst g
