@@ -208,6 +208,10 @@ class (Graph g, HasEdgeLabel g, HasVertexLabel g) => InductiveGraph g where
     let g' = deleteEdgesBetween g src dst
     in insertLabeledEdge g' src dst lbl
 
+  -- | Used to update the label for a Vertex.  The Vertex itself remains, but the
+  -- label associated with the vertex is modified.
+  replaceLabeledVertex :: g -> Vertex -> VertexLabel g -> g
+
   -- | Remove a 'Vertex' from the graph
   deleteVertex :: g -> Vertex -> g
   deleteVertex g v = fromMaybe g $ do
