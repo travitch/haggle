@@ -157,6 +157,7 @@ module Data.Graph.Haggle (
   deleteEdge,
   deleteEdgesBetween,
   replaceLabeledEdge,
+  replaceLabeledVertex,
   deleteVertex,
   I.Context(..),
 
@@ -379,6 +380,10 @@ deleteEdgesBetween = I.deleteEdgesBetween
 replaceLabeledEdge :: (I.InductiveGraph g, I.Graph g, I.HasEdgeLabel g, I.HasVertexLabel g) => g -> I.Vertex -> I.Vertex -> I.EdgeLabel g -> Maybe (I.Edge, g)
 replaceLabeledEdge = I.replaceLabeledEdge
 {-# INLINABLE replaceLabeledEdge #-}
+
+replaceLabeledVertex :: (I.InductiveGraph g, I.Graph g, I.HasEdgeLabel g, I.HasVertexLabel g) => g -> I.Vertex -> I.VertexLabel g -> g
+replaceLabeledVertex = I.replaceLabeledVertex
+{-# INLINABLE replaceLabeledVertex #-}
 
 deleteVertex :: (I.InductiveGraph g, I.Graph g, I.HasEdgeLabel g, I.HasVertexLabel g) => g -> I.Vertex -> g
 deleteVertex = I.deleteVertex
