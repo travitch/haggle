@@ -229,7 +229,7 @@ instance (I.MAddEdge g) => I.MAddEdge (VertexLabeledMGraph g nl) where
 -- > import Data.Graph.Haggle.VertexLabelAdapter
 -- > import Data.Graph.Haggle.SimpleBiDigraph
 -- >
--- > let g = fromEdgeList newMSimpleBiDigraph [(0,1), (1,2), (2,3), (3,0)]
+-- > let (g,m) = fromEdgeList newMSimpleBiDigraph [(0,1), (1,2), (2,3), (3,0)]
 --
 -- @g@ has type SimpleBiDigraph.
 --
