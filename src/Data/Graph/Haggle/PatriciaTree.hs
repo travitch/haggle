@@ -120,6 +120,9 @@ instance I.InductiveGraph (PatriciaTree nl el) where
         v = I.V vid
         g' = IM.insert vid (Ctx mempty v lab mempty) g
     in (v, Gr g')
+  replaceLabeledVertex (Gr g) (I.V v) vl =
+    let updLabel (Ctx ie nv _nl oe) = Ctx ie nv vl oe
+    in Gr $ IM.adjust updLabel v g
   insertLabeledEdge gr@(Gr g) v1@(I.V src) (I.V dst) lab | src == dst = do
     guard (IM.member src g)
     guard (not (I.edgeExists gr v1 v1))
