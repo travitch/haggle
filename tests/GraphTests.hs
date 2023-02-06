@@ -272,4 +272,11 @@ testPatricia =
        do let gr2 = Bi.bimap (+2) (succ . succ) gr1
           sum (snd <$> HGL.labeledVertices gr2) @?= 27
           L.sort (snd <$> HGL.labeledEdges gr2) @?= "cde"
+
+     , "replaceLabeledVertex" ~:
+       do let gr2 = HGL.replaceLabeledVertex gr1 (vs !! 2) 11
+          -- Vertex label changed?
+          sum (snd <$> HGL.labeledVertices gr2) @?= (15 + (11 - 4))
+          -- Edges are still in place?
+          L.sort (snd <$> HGL.labeledEdges gr2) @?= "abc"
      ]
