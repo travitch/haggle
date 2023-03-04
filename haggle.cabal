@@ -60,7 +60,8 @@ test-suite GraphTests
   build-depends: haggle,
                  base >= 4.5,
                  containers,
-                 fgl,
+                 -- fgl 5.8.1.1 is required for its dom fix for oracle testing here
+                 fgl >= 5.8.1.1,
                  HUnit,
                  QuickCheck > 2.4,
                  test-framework,
