@@ -84,11 +84,10 @@ tests = [ testProperty "prop_sameVertexCount" prop_sameVertexCount
         , testProperty "prop_sameNoComponents" prop_sameNoComponents
         , testProperty "prop_immDominatorsSame" prop_immDominatorsSame
 
-        -- 2022.07.18 KWQ: turns out that FGL is not so great of an oracle for
-        -- checking dominators (see https://github.com/haskell/fgl/pull/102, and
-        -- testExplicit below), so these tests are disabled until this can be
-        -- resolved.
-        -- , testProperty "prop_dominatorsSame" prop_dominatorsSame
+        -- prop_dominatorsSame requires fgl 5.8.1.1, which fixes errors in fgl's
+        -- dom functionality that is used as the oracle for the tests here.
+        , testProperty "prop_dominatorsSame" prop_dominatorsSame
+
         ] <>  testPatricia
         <> testExplicit
 
