@@ -48,8 +48,7 @@ library
                  primitive >= 0.4 && < 0.9,
                  containers >= 0.4,
                  hashable >= 1.2 && < 1.5,
-                 deepseq >= 1 && < 2,
-                 monad-primitive < 0.2
+                 deepseq >= 1 && < 2
 
 test-suite GraphTests
   type: exitcode-stdio-1.0
