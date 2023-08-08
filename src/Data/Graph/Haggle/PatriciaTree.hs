@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeFamilies, BangPatterns #-}
+{-# LANGUAGE TypeFamilies, BangPatterns, DeriveFunctor #-}
 -- | This graph is based on the implementation in fgl (using
 -- big-endian patricia-tries -- IntMap).
 --
@@ -20,6 +20,7 @@ import qualified Data.Graph.Haggle.Classes as I
 import qualified Data.Graph.Haggle.Internal.Basic as I
 
 data Ctx nl el = Ctx !(IntMap el) I.Vertex nl !(IntMap el)
+  deriving Functor
 
 instance (NFData nl, NFData el) => NFData (Ctx nl el) where
   rnf (Ctx p v nl s) =
@@ -37,6 +38,7 @@ instance (NFData nl, NFData el) => NFData (Ctx nl el) where
 -- This graph type is most useful for incremental construction in pure
 -- code.  It also supports node removal from pure code.
 data PatriciaTree nl el = Gr { graphRepr :: IntMap (Ctx nl el) }
+  deriving Functor
 
 instance (NFData nl, NFData el) => NFData (PatriciaTree nl el) where
   rnf (Gr im) = im `deepseq` ()
