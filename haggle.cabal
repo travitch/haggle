@@ -16,7 +16,7 @@ maintainer: tristan@ravit.ch
 category: Data Structures, Graphs
 build-type: Simple
 cabal-version: >=1.10
-tested-with: GHC ==7.10.3 || ==8.0.2 || ==8.2.2 || ==8.4.4 || ==8.6.5 || ==8.8.4 || ==8.10.7 || ==9.0.2 || ==9.2.2
+tested-with: GHC ==7.10.3 || ==8.0.2 || ==8.2.2 || ==8.4.4 || ==8.6.5 || ==8.8.4 || ==8.10.7 || ==9.0.2 || ==9.2.8 || ==9.4.5 || ==0.6.2
 extra-source-files: ChangeLog.md
                     README.md
 
