@@ -1,3 +1,12 @@
+0.3 (2023-08-20)
+----------------
+
+- Add `Functor` instances for `PatriciaTree` and `Ctx` (@RyanGlScott)
+- Support building with vector-0.13.* (@RyanGlScott)
+- Remove an unused dependency on monad-primitive (@RyanGlScott)
+- Add `replaceLabeledVertex` to the `InductiveGraph` interface (@kquick)
+- Fixed a bug in the dominators calculation (@kquick)
+
 0.2 (2022-05-08)
 ----------------
 
