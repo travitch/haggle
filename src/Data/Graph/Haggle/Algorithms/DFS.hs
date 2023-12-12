@@ -40,7 +40,8 @@ module Data.Graph.Haggle.Algorithms.DFS (
   isConnected,
   topsort,
   scc,
-  reachable
+  reachable,
+  hasCycle
   ) where
 
 import Control.Monad ( filterM, foldM, liftM )
@@ -193,6 +194,13 @@ scc g = map preorder (rdff g (topsort g))
 -- | Compute the set of vertices reachable from a root 'Vertex'.
 reachable :: (Graph g) => Vertex -> g -> [Vertex]
 reachable v g = preorderF (dff g [v])
+
+
+-- | Returns true if the current node is part of a cycle (i.e. itself is
+-- reachable by a path starting with one or more of this vertex's out edges).
+hasCycle :: (Graph g) => Vertex -> g -> Bool
+hasCycle v g = any (\v' -> v `elem` (reachable v' g)) $ successors g v
+
 
 -- Helpers
 
