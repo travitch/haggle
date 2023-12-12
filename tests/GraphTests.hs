@@ -202,6 +202,16 @@ testExplicit =
      , "haggle (patricia) [2-1,2-2] reachable from 1" ~:
        do HGL.reachable (vs !! 0) gr2 @?= [ (vs !! 0)
                                           ]
+     , "no cycle in [1-2,4] from 1" ~:
+       do HGL.hasCycle (vs !! 0) gr1 @?= False
+
+     , "cycle in [1-2-1,4] from 1" ~:
+       do let tg = plusEdge gr1 (vs !! 1) (vs !! 0)
+          HGL.hasCycle (vs !! 0) tg @?= True
+
+     , "cycle in [1*-2,4] from 1" ~:
+       do let tg = plusEdge gr1 (vs !! 0) (vs !! 0)
+          HGL.hasCycle (vs !! 0) tg @?= True
 
      , "haggle dominator [1-2,4] from 1" ~:
        do HGL.dominators gr1 (vs !! 0) @?= [ (vs !! 0, [ (vs !! 0) ])
