@@ -1,5 +1,14 @@
 *.swp
 .hsenv
 dist/
+dist-newstyle/
 .cabal-sandbox/
 /cabal.sandbox.config
+_darcs
+.boring
+*~
+.cmd_history
+.DS_Store
+.vscode
+cabal.project
+cabal.project.local
