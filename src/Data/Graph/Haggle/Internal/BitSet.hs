@@ -44,6 +44,5 @@ testBit (BS v sz) bitIx
   | otherwise = do
     let wordIx = bitIx `div` bitsPerWord
         bitPos = bitIx `mod` bitsPerWord
-    w <- V.read v wordIx
+    w <- V.unsafeRead v wordIx
     return $ B.testBit w bitPos
-
