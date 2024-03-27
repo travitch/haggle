@@ -44,7 +44,7 @@ module Data.Graph.Haggle.Algorithms.DFS (
   hasCycle
   ) where
 
-import Control.Monad ( filterM, foldM, liftM )
+import Control.Monad ( foldM )
 import Control.Monad.ST
 import qualified Data.Foldable as F
 import Data.Monoid
@@ -81,11 +81,9 @@ xdfsWith g nextVerts f roots
         True -> return acc
         False -> do
           setBitUnsafe bs (vertexId v)
-          nxt <- filterM (notVisited bs) (nextVerts v)
+          let nxt = nextVerts v
           foldM (go bs) (f v : acc) nxt
 
-notVisited :: BitSet s -> Vertex -> ST s Bool
-notVisited bs v = liftM not (testBitUnsafe bs (vertexId v))
 
 -- | Forward parameterized DFS
 dfsWith :: (Graph g)
@@ -147,7 +145,7 @@ xdffWith g nextVerts f roots
         True -> return acc
         False -> do
           setBitUnsafe bs (vertexId v)
-          nxt <- filterM (notVisited bs) (nextVerts v)
+          let nxt = nextVerts v
           ts <- foldM (go bs) [] nxt
           return $ T.Node (f v) (reverse ts) : acc
 
