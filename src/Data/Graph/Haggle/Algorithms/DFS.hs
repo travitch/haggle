@@ -67,22 +67,25 @@ xdfsWith :: (Graph g)
          -> [c]
 xdfsWith g nextVerts f roots
   | isEmpty g || null roots = []
-  | otherwise = runST $ do
-    bs <- newBitSet (maxVertexId g + 1)
-    res <- foldM (go bs) [] roots
-    return $ reverse res
+  | otherwise =
+    if any (not . (`elem` vertices g)) roots
+    then []
+    else runST $ do
+      bs <- newBitSet (maxVertexId g + 1)
+      res <- foldM (go bs) [] roots
+      return $ reverse res
   where
     go bs acc v = do
-      isMarked <- testBit bs (vertexId v)
+      isMarked <- testBitUnsafe bs (vertexId v)
       case isMarked of
         True -> return acc
         False -> do
-          setBit bs (vertexId v)
+          setBitUnsafe bs (vertexId v)
           nxt <- filterM (notVisited bs) (nextVerts v)
           foldM (go bs) (f v : acc) nxt
 
 notVisited :: BitSet s -> Vertex -> ST s Bool
-notVisited bs v = liftM not (testBit bs (vertexId v))
+notVisited bs v = liftM not (testBitUnsafe bs (vertexId v))
 
 -- | Forward parameterized DFS
 dfsWith :: (Graph g)
@@ -130,17 +133,20 @@ xdffWith :: (Graph g)
          -> [Tree c]
 xdffWith g nextVerts f roots
   | isEmpty g || null roots = []
-  | otherwise = runST $ do
-    bs <- newBitSet (maxVertexId g + 1)
-    res <- foldM (go bs) [] roots
-    return $ reverse res
+  | otherwise =
+    if any (not . (`elem` vertices g)) roots
+    then []
+    else runST $ do
+      bs <- newBitSet (maxVertexId g + 1)
+      res <- foldM (go bs) [] roots
+      return $ reverse res
   where
     go bs acc v = do
-      isMarked <- testBit bs (vertexId v)
+      isMarked <- testBitUnsafe bs (vertexId v)
       case isMarked of
         True -> return acc
         False -> do
-          setBit bs (vertexId v)
+          setBitUnsafe bs (vertexId v)
           nxt <- filterM (notVisited bs) (nextVerts v)
           ts <- foldM (go bs) [] nxt
           return $ T.Node (f v) (reverse ts) : acc
