@@ -1,6 +1,8 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -fno-warn-missing-signatures #-}
 
 -- | This module tests Haggle by comparing its results to those of FGL.
@@ -22,6 +24,9 @@ import Test.QuickCheck
 import Control.Arrow ( first, second )
 import qualified Data.Bifunctor as Bi
 import Control.Monad ( replicateM )
+import Data.Function ( on )
+import Control.Monad.ST
+import Control.Monad ( liftM, filterM, replicateM )
 import qualified Data.Foldable as F
 import qualified Data.List as L
 import Data.Maybe ( fromJust, isNothing )
@@ -33,8 +38,6 @@ import           Data.Monoid ( (<>) )
 
 import qualified Data.Graph.Inductive as FGL
 import qualified Data.Graph.Haggle as HGL
-import qualified Data.Graph.Haggle.VertexLabelAdapter as HGL
-import qualified Data.Graph.Haggle.SimpleBiDigraph as HGL
 import qualified Data.Graph.Haggle.Algorithms.DFS as HGL
 import qualified Data.Graph.Haggle.Algorithms.Dominators as HGL
 
@@ -61,6 +64,8 @@ instance Arbitrary NodeId where
         i <- choose (0, n)
         return (NID i)
 
+-- | Generates a pair of a Haggle graph and the corresponding FGL graph to serve
+-- as an oracle.
 mkGraphPair :: Int -> Gen GraphPair
 mkGraphPair sz = do
   nEdges <- choose (2, 2 * sz)
@@ -72,6 +77,8 @@ mkGraphPair sz = do
       bg = FGL.mkGraph ns (map (\(s, d) -> (s, d, ())) edges)
       (tg, _) = HGL.fromEdgeList HGL.newMSimpleBiDigraph edges
   return $! GP edges bg tg
+
+
 
 main :: IO ()
 main = defaultMain tests
@@ -90,6 +97,11 @@ tests = [ testProperty "prop_sameVertexCount" prop_sameVertexCount
         -- dom functionality that is used as the oracle for the tests here.
         , testProperty "prop_dominatorsSame" prop_dominatorsSame
 
+        , testProperty "patricia match: remaining vertices" prop_match_patricia_remvertices
+        , testProperty "patricia match: vertex label removed" prop_match_patricia_vlblremoved
+        , testProperty "patricia match: disconnected to" prop_match_patricia_no_in_edges
+        , testProperty "patricia match: disconnected from" prop_match_patricia_no_out_edges
+        , testProperty "patricia match: edges removed" prop_match_patricia_remedges
         ] <>  testPatricia
         <> testExplicit
 
@@ -291,3 +303,147 @@ testPatricia =
           -- Edges are still in place?
           L.sort (snd <$> HGL.labeledEdges gr2) @?= "abc"
      ]
+
+
+----------------------------------------------------------------------
+
+
+newtype NodeLabel = NL Int deriving (Eq, Show)
+newtype EdgeLabel = EL Int deriving (Eq, Show)
+
+-- type InductiveGraphBuilder g = (g NodeLabel EdgeLabel -> g NodeLabel EdgeLabel)
+data InductiveGraphBuilder g =
+  IGB { build :: g NodeLabel EdgeLabel -> g NodeLabel EdgeLabel }
+
+instance ( HGL.InductiveGraph (g NodeLabel EdgeLabel)
+         , HGL.HasVertexLabel (g NodeLabel EdgeLabel)
+         , HGL.HasEdgeLabel (g NodeLabel EdgeLabel)
+         , HGL.VertexLabel (g NodeLabel EdgeLabel) ~ NodeLabel
+         , HGL.EdgeLabel (g NodeLabel EdgeLabel) ~ EdgeLabel
+         ) => Arbitrary (InductiveGraphBuilder g) where
+  arbitrary = oneof [ solitaryNode
+                    , edgeToNewNode
+                    , edgeBetweenExistingNodes
+                    , edgeToSelf
+                    ]
+    where solitaryNode = return $ IGB $ \g ->
+            let vLabel = NL $ length $ HGL.vertices g
+            in snd $ HGL.insertLabeledVertex g vLabel
+          edgeToNewNode = do
+            srcNum <- choose (0, 1024)
+            return $ IGB $ \g ->
+              let vs = HGL.vertices g
+                  srcV = cycle vs !! srcNum
+                  vLabel = NL $ length $ vs
+                  eLabel = EL $ length $ HGL.edges g
+                  (nv, ng) = HGL.insertLabeledVertex g vLabel
+              in if null vs
+                 then ng
+                 else maybe g snd $ HGL.insertLabeledEdge ng srcV nv eLabel
+          edgeBetweenExistingNodes = do
+            srcNum <- choose (0, 1024)
+            dstNum <- choose (0, 1024)
+            -- n.b. the inductive graphs don't like duplicated edges, but they
+            -- will just return Nothing on inserting the edge, which returns the
+            -- existing graph, so this duplication attempt is quietly ignored.
+            return $ IGB $ \g ->
+              let vs = HGL.vertices g
+                  srcV = cycle (HGL.vertices g) !! srcNum
+                  dstV = cycle (HGL.vertices g) !! dstNum
+                  eLabel = EL $ length $ HGL.edges g
+              in if null vs
+                 then snd $ HGL.insertLabeledVertex g $ NL 0
+                 else maybe g snd $ HGL.insertLabeledEdge g srcV dstV eLabel
+          edgeToSelf = do
+            srcNum <- choose (0, 1024)
+            -- see note above re: duplicate edges
+            return $ IGB $ \g ->
+              let vs = HGL.vertices g
+                  srcV = cycle (HGL.vertices g) !! srcNum
+                  eLabel = EL $ length $ HGL.edges g
+              in if null vs
+                 then snd $ HGL.insertLabeledVertex g $ NL 0
+                 else maybe g snd $ HGL.insertLabeledEdge g srcV srcV eLabel
+
+
+type InductiveProperty g = InductiveCase g -> Bool
+
+data InductiveCase g = IGC g HGL.Vertex deriving Show
+
+instance (Arbitrary g, HGL.Graph g) => Arbitrary (InductiveCase g) where
+  arbitrary = do g <- arbitrary
+                 v <- elements $ HGL.vertices g
+                 return $ IGC g v
+
+onMatchResult :: HGL.InductiveGraph g
+              => HGL.Graph g
+              => (g -> HGL.Vertex -> (HGL.Context g, g) -> Bool)
+              -> InductiveProperty g
+onMatchResult prop (IGC g v) =
+  case HGL.match g v of
+    Nothing -> False
+    Just mr -> prop g v mr
+
+prop_match_inductive_remvertices :: HGL.InductiveGraph g => InductiveProperty g
+prop_match_inductive_remvertices = onMatchResult $ \g -> \_ -> \(_ctxt, g') ->
+  length (HGL.vertices g) == length (HGL.vertices g') + 1
+
+prop_match_inductive_vlblremoved :: HGL.InductiveGraph g
+                                 => Eq (HGL.VertexLabel g)
+                                 => InductiveProperty g
+prop_match_inductive_vlblremoved = onMatchResult $ \_ -> \v -> \(ctxt, g') ->
+  let HGL.Context _ vl _ = ctxt
+  in not $ (v,vl) `elem` HGL.labeledVertices g'
+
+prop_match_inductive_no_in_edges :: HGL.InductiveGraph g
+                                 => InductiveProperty g
+prop_match_inductive_no_in_edges = onMatchResult $ \_ -> \v -> \(ctxt, g') ->
+  let HGL.Context intos _ _ = ctxt
+      edgeInTo (_,sv) = v /= sv && v `elem` HGL.successors g' sv
+  in not $ any edgeInTo intos
+
+prop_match_inductive_no_out_edges :: HGL.InductiveGraph g
+                                  => HGL.Bidirectional g
+        => Show g
+                                  => InductiveProperty g
+prop_match_inductive_no_out_edges = onMatchResult $ \_ -> \v -> \(ctxt, g') ->
+  let HGL.Context _ _ outs = ctxt
+      edgeOutTo (_,dv) = v /= dv && v `elem` HGL.predecessors g' dv
+  in not $ any edgeOutTo outs
+
+prop_match_inductive_remedges :: HGL.InductiveGraph g
+                              => HGL.HasEdgeLabel g
+                              => Eq (HGL.EdgeLabel g)
+                              => InductiveProperty g
+prop_match_inductive_remedges = onMatchResult $ \_ -> \_ -> \(ctxt, g') ->
+  let HGL.Context intos _ outs = ctxt
+      remainingEdgeLabels = snd <$> HGL.labeledEdges g'
+      hasEdge (el,_) = el `elem` remainingEdgeLabels
+  in not $ any hasEdge $ intos <> outs
+
+--------------------
+
+type PatriciaProperty = InductiveProperty (HGL.PatriciaTree NodeLabel EdgeLabel)
+
+instance Arbitrary (HGL.PatriciaTree NodeLabel EdgeLabel) where
+  arbitrary = do mkGraph <- listOf1 arbitrary
+                 return $ foldr build HGL.emptyGraph mkGraph
+
+instance Show (HGL.PatriciaTree NodeLabel EdgeLabel) where
+  show g = "PatriciaTree/" <> show (length $ HGL.vertices g)
+           <> "/" <> show (length $ HGL.edges g)
+
+prop_match_patricia_remvertices :: PatriciaProperty
+prop_match_patricia_remvertices = prop_match_inductive_remvertices
+
+prop_match_patricia_vlblremoved :: PatriciaProperty
+prop_match_patricia_vlblremoved = prop_match_inductive_vlblremoved
+
+prop_match_patricia_no_in_edges :: PatriciaProperty
+prop_match_patricia_no_in_edges = prop_match_inductive_no_in_edges
+
+prop_match_patricia_no_out_edges :: PatriciaProperty
+prop_match_patricia_no_out_edges = prop_match_inductive_no_out_edges
+
+prop_match_patricia_remedges :: PatriciaProperty
+prop_match_patricia_remedges = prop_match_inductive_remedges
