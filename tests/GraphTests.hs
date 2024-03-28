@@ -1,5 +1,7 @@
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# OPTIONS_GHC -fno-warn-missing-signatures #-}
 
 -- | This module tests Haggle by comparing its results to those of FGL.
 -- This assumes that FGL is reasonably correct.
@@ -252,15 +254,15 @@ testExplicit =
 testPatricia :: [Test.Framework.Test]
 testPatricia =
   let gr0 = foldl (\g -> snd . HGL.insertLabeledVertex g)
-                 (HGL.emptyGraph :: HGL.PatriciaTree Int Char)
-                 [1,2,4,3,5,0]
-      vs = fst <$> HGL.labeledVertices gr0
+            (HGL.emptyGraph :: HGL.PatriciaTree Int Char)
+            [1,2,4,3,5,0]
+      vs = fst <$> (L.sortBy (compare `on` snd) $ HGL.labeledVertices gr0)
       gr1 = foldl (\g (f,t,l) ->
                      snd $ fromJust $ HGL.insertLabeledEdge g f t l)
             gr0
-            [ (vs !! 1, vs !! 2, 'a')
-            , (vs !! 0, vs !! 2, 'b')
-            , (vs !! 1, vs !! 5, 'c')
+            [ (vs !! 2, vs !! 4, 'a')
+            , (vs !! 1, vs !! 4, 'b')
+            , (vs !! 2, vs !! 0, 'c')
             ]
   in hUnitTestToTests $ test
      [ "create graph" ~:
@@ -283,7 +285,7 @@ testPatricia =
           L.sort (snd <$> HGL.labeledEdges gr2) @?= "cde"
 
      , "replaceLabeledVertex" ~:
-       do let gr2 = HGL.replaceLabeledVertex gr1 (vs !! 2) 11
+       do let gr2 = HGL.replaceLabeledVertex gr1 (vs !! 4) 11
           -- Vertex label changed?
           sum (snd <$> HGL.labeledVertices gr2) @?= (15 + (11 - 4))
           -- Edges are still in place?
