@@ -324,8 +324,9 @@ labeledVertices :: (I.Graph g) => LabeledGraph g nl el -> [(I.Vertex, nl)]
 labeledVertices g = map toLabVert $ I.vertices (rawGraph g)
   where
     toLabVert v =
-      let Just lab = vertexLabel g v
-      in (v, lab)
+      case vertexLabel g v of
+        Just lab -> (v, lab)
+        Nothing -> error "Impossible: LabeledGraphs always have vertex labels"
 
 -- | Likewise, we use 'edges' here instead of directly reading from the edge
 -- label storage array.
@@ -333,8 +334,9 @@ labeledEdges :: (I.Graph g) => LabeledGraph g nl el -> [(I.Edge, el)]
 labeledEdges g = map toLabEdge $ I.edges (rawGraph g)
   where
     toLabEdge e =
-      let Just lab = edgeLabel g e
-      in (e, lab)
+      case edgeLabel g e of
+        Just lab -> (e, lab)
+        Nothing -> error "Impossible: LabeledGraphs always have edge labels"
 
 mapEdgeLabel :: LabeledGraph g nl el -> (el -> el') -> LabeledGraph g nl el'
 mapEdgeLabel g f = g { edgeLabelStore = V.map f (edgeLabelStore g) }

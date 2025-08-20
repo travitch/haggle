@@ -79,8 +79,10 @@ instance I.HasEdgeLabel (PatriciaTree nl el) where
   labeledEdges gr = map toLabEdge (I.edges gr)
     where
       toLabEdge e =
-        let Just lab = I.edgeLabel gr e
-        in (e, lab)
+        case I.edgeLabel gr e of
+          Just lab -> (e, lab)
+          Nothing -> error "Impossible: PatriciaTree instances always have edge labels"
+
   labeledOutEdges (Gr g) (I.V s) = fromMaybe [] $ do
     Ctx _ _ _ ss <- IM.lookup s g
     return $ IM.foldrWithKey toOut [] ss
@@ -95,8 +97,9 @@ instance I.HasVertexLabel (PatriciaTree nl el) where
   labeledVertices gr = map toLabVert (I.vertices gr)
     where
       toLabVert v =
-        let Just l = I.vertexLabel gr v
-        in (v, l)
+        case I.vertexLabel gr v of
+          Just l -> (v, l)
+          Nothing -> error "Impossible: PatriciaTree instances always have vertex labels"
 
 instance I.Bidirectional (PatriciaTree nl el) where
   predecessors (Gr g) (I.V v) = fromMaybe [] $ do
