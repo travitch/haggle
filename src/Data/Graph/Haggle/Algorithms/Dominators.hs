@@ -51,7 +51,9 @@ type Preds = Vector [Int]
 immediateDominators :: (Graph g) => g -> Vertex -> [(Vertex, Vertex)]
 immediateDominators g root = fromMaybe [] $ do
   (res, toNode, _) <- domWork g root
-  return $ tail $ V.toList $ V.imap (\i n -> (toNode!i, toNode!n)) res
+  case V.toList $ V.imap (\i n -> (toNode!i, toNode!n)) res of
+    [] -> error "Impossible: a vertex always dominates itself"
+    _ : rest -> return rest
 
 -- | Compute all of the dominators for each 'Vertex' reachable from the @root@.
 -- Each reachable 'Vertex' is paired with the list of nodes that dominate it,
@@ -66,38 +68,43 @@ dominators g root = fromMaybe [] $ do
            [(n, verts) | n <- rest]
 
 domWork :: (Graph g) => g -> Vertex -> Maybe (IDom, ToNode, FromNode)
-domWork g root
-  | null trees = Nothing
-  | otherwise = return (idom, toNode, fromNode)
+domWork g root =
+  -- Build up a depth-first tree from the root as a first approximation
+  case dff g [root] of
+    [] -> Nothing
+    [tree] ->
+      let (s, ntree) = numberTree 0 tree
+          -- Start with an approximation (idom0) where the idom of each node is
+          -- its parent in the depth-first tree.  Note that index 0 is the root,
+          -- which we will basically be ignoring (since it has no dominator).
+          dom0Map = M.fromList (treeEdges (-1) ntree)
+          idom0 = V.generate (M.size dom0Map) (dom0Map M.!)
+          -- Build a mapping from graph vertices to internal indices.  @treeNodes@
+          -- are nodes that are in the depth-first tree from the root.  @otherNodes@
+          -- are the rest of the nodes in the graph, mapped to -1 (since they aren't
+          -- going to be in the result)
+          treeNodes = M.fromList $ zip (T.flatten tree) (T.flatten ntree)
+          otherNodes = M.fromList $ zip vlist (repeat (-1))
+          fromNode = M.unionWith const treeNodes otherNodes
+
+          -- Translate from internal nodes back to graph nodes (only need the nodes
+          -- in the depth-first tree)
+          toNodeMap = M.fromList $ zip (T.flatten ntree) (T.flatten tree)
+          toNode = V.generate (M.size toNodeMap) (toNodeMap M.!)
+
+          -- Use a pre-pass over the graph to collect predecessors so that we don't
+          -- require a Bidirectional graph.  We need a linear pass over the graph
+          -- here anyway, so we don't lose anything.
+          predMap = fmap S.toList $ foldr (toPredecessor g) M.empty vlist
+          preds = V.fromList $ [0] : [filter (/= -1) (map (fromNode M.!) (predMap M.! (toNode ! i)))
+                                     | i <- [1..s-1]]
+
+
+          idom = fixEq (refineIDom preds) idom0
+      in return (idom, toNode, fromNode)
+    _trees -> error "Impossible: only a single tree can be reachable starting from a single root node"
   where
     vlist = reachable root g
-    -- Build up a depth-first tree from the root as a first approximation
-    trees@(~[tree]) = dff g [root]
-    (s, ntree) = numberTree 0 tree
-    -- Start with an approximation (idom0) where the idom of each node is
-    -- its parent in the depth-first tree.  Note that index 0 is the root,
-    -- which we will basically be ignoring (since it has no dominator).
-    dom0Map = M.fromList (treeEdges (-1) ntree)
-    idom0 = V.generate (M.size dom0Map) (dom0Map M.!)
-    -- Build a mapping from graph vertices to internal indices.  @treeNodes@
-    -- are nodes that are in the depth-first tree from the root.  @otherNodes@
-    -- are the rest of the nodes in the graph, mapped to -1 (since they aren't
-    -- going to be in the result)
-    treeNodes = M.fromList $ zip (T.flatten tree) (T.flatten ntree)
-    otherNodes = M.fromList $ zip vlist (repeat (-1))
-    fromNode = M.unionWith const treeNodes otherNodes
-    -- Translate from internal nodes back to graph nodes (only need the nodes
-    -- in the depth-first tree)
-    toNodeMap = M.fromList $ zip (T.flatten ntree) (T.flatten tree)
-    toNode = V.generate (M.size toNodeMap) (toNodeMap M.!)
-
-    -- Use a pre-pass over the graph to collect predecessors so that we don't
-    -- require a Bidirectional graph.  We need a linear pass over the graph
-    -- here anyway, so we don't lose anything.
-    predMap = fmap S.toList $ foldr (toPredecessor g) M.empty vlist
-    preds = V.fromList $ [0] : [filter (/= -1) (map (fromNode M.!) (predMap M.! (toNode ! i)))
-                               | i <- [1..s-1]]
-    idom = fixEq (refineIDom preds) idom0
 
 toPredecessor :: (Graph g)
               => g

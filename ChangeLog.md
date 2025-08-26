@@ -1,3 +1,10 @@
+0.3.1 (2025-08-13)
+------------------
+
+- Update bounds for compatibility with ghc-9.10
+- Add `hasCycle` for detecting cycles in graphs (@kquick)
+- Optimize DFS algorithms by removing an unnecessary traversal (@kquick)
+
 0.3 (2023-08-20)
 ----------------
 

@@ -219,6 +219,7 @@ class (Graph g, HasEdgeLabel g, HasVertexLabel g) => InductiveGraph g where
     return g'
 
 addEdgeLabel :: (HasEdgeLabel g) => g -> Edge -> (Edge, EdgeLabel g)
-addEdgeLabel g e = (e, el)
-  where
-   Just el = edgeLabel g e
+addEdgeLabel g e =
+  case edgeLabel g e of
+    Just el -> (e, el)
+    Nothing -> error "Expected an edge label for a graph implementation satisfying the HasEdgeLabel constraint"
