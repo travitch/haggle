@@ -2,8 +2,10 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -fno-warn-missing-signatures #-}
+{-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 
 -- | This module tests Haggle by comparing its results to those of FGL.
 -- This assumes that FGL is reasonably correct.
@@ -25,8 +27,6 @@ import Control.Arrow ( first, second )
 import qualified Data.Bifunctor as Bi
 import Control.Monad ( replicateM )
 import Data.Function ( on )
-import Control.Monad.ST
-import Control.Monad ( liftM, filterM, replicateM )
 import qualified Data.Foldable as F
 import qualified Data.List as L
 import Data.Maybe ( fromJust, isNothing )
